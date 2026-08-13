@@ -22,6 +22,8 @@ const defaults = {
     ]
 };
 
+const cloneDefault = (name) => JSON.parse(JSON.stringify(defaults[name]));
+
 async function ensureCollection(name) {
     const filePath = files[name];
     await fs.mkdir(dataDirectory, { recursive: true });
@@ -29,7 +31,7 @@ async function ensureCollection(name) {
     try {
         await fs.access(filePath);
     } catch {
-        await fs.writeFile(filePath, JSON.stringify(defaults[name], null, 2));
+        await fs.writeFile(filePath, JSON.stringify(cloneDefault(name), null, 2));
     }
 }
 
@@ -41,8 +43,9 @@ async function readCollection(name) {
     try {
         return JSON.parse(raw);
     } catch {
-        await fs.writeFile(filePath, JSON.stringify(defaults[name], null, 2));
-        return defaults[name];
+        const fallbackValue = cloneDefault(name);
+        await fs.writeFile(filePath, JSON.stringify(fallbackValue, null, 2));
+        return fallbackValue;
     }
 }
 

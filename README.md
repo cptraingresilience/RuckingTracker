@@ -152,11 +152,11 @@ Change this value to match your backend host before building:
 
 The app stores the access token received from sign-in/sign-up in `UserDefaults` (`rt_access_token`) and attaches it automatically to all authenticated API requests.
 
-**Local data is always the source of truth.** If the backend is unreachable, all create/edit/delete operations still work locally.
+**Local data remains available when the backend is unreachable.** The app still lets you create, edit, and delete rucks locally, then attempts backend sync when an API token is available.
 
 
 ## Configuration
-- **Backend base URL**: set `BackendBaseURL` in `/home/runner/work/RuckingTracker/RuckingTracker/RuckingTracker/RuckingTracker/Info.plist`, or override at runtime with `UserDefaults` key `rt_backend_url`
+- **Backend base URL**: set `BackendBaseURL` in `RuckingTracker/RuckingTracker/Info.plist`, or override at runtime with `UserDefaults` key `rt_backend_url`
 - **Backend `.env`**: `PORT`, `DB_PATH`, `AUTH_SECRET` (see Running the Local Backend above)
 
 ## API Reference (local backend)
@@ -173,7 +173,7 @@ Base URL: `http://<host>:3000/api` (configure `BackendBaseURL` in `Info.plist` o
 | DELETE | `/activities/:id` | Delete an activity | Yes |
 | GET | `/activities/stats/summary` | Aggregated stats | Yes |
 
-**Auth**: send an `Authorization: ****** header on authenticated routes.
+**Auth**: include a bearer access token in the `Authorization` header on authenticated routes.
 
 Request body for create/update:
 ```json
