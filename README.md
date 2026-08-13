@@ -14,6 +14,12 @@ A desktop application for tracking rucks (ruck marches / weighted walks), loggin
 - [Running the App](#running-the-app)
   - [Running the Local Backend (JS)](#running-the-local-backend-js)
   - [Running the Swift Desktop App](#running-the-swift-desktop-app)
+  - [Running the Web Frontend](#running-the-web-frontend)
+- [Web Frontend](#web-frontend)
+  - [Framework Choice](#framework-choice)
+  - [Configuration](#frontend-configuration)
+  - [Connecting to the Backend](#connecting-to-the-backend)
+  - [Supported CRUD Capabilities](#supported-crud-capabilities)
 - [Configuration](#configuration)
 - [API Reference (local backend)](#api-reference-local-backend)
 - [Data & Persistence](#data--persistence)
@@ -81,6 +87,28 @@ Notes:
 
 ## Running the App
 
+### Running the Web Frontend
+
+The web frontend lives in the `frontend/` directory. It is plain HTML + CSS + vanilla JS — no build step required.
+
+**Option 1 — Python (simplest, zero dependencies)**
+```bash
+cd frontend
+python3 -m http.server 8080
+# Then open http://localhost:8080
+```
+
+**Option 2 — Node.js `serve` package**
+```bash
+npx serve frontend
+# Or: cd frontend && npx serve .
+```
+
+**Option 3 — VS Code Live Server extension**
+Open `frontend/index.html` with Live Server (right-click → "Open with Live Server").
+
+> The frontend is a static site. It has no Node dependencies or build process.
+
 ### Running the Local Backend (JS)
 If the backend is a Node.js service, start it before launching the client (if the client expects an HTTP API on localhost).
 
@@ -112,6 +140,59 @@ xcodebuild -scheme RuckingTracker -configuration Debug
 open build/Debug/RuckingTracker.app
 ```
 (Replace scheme and paths with real values used by the project.)
+
+## Web Frontend
+
+### Framework Choice
+
+The web frontend uses **plain HTML + CSS + vanilla JavaScript** — no framework or build tool is required. This matches the backend's simple REST API surface (Express/Node.js with JSON responses) and keeps the project lightweight and dependency-free, consistent with the existing codebase philosophy (Swift + JS without heavy tooling).
+
+### Frontend Configuration
+
+Backend connection is configured in **`frontend/config.js`**:
+
+```js
+const CONFIG = {
+  BASE_URL: "http://172.20.10.8:3000/api",  // ← change this to your backend host
+};
+```
+
+- For local development: `http://localhost:3000/api`
+- For a different host/IP: replace `172.20.10.8` with your machine's LAN IP or hostname.
+- No environment variables required — just edit `config.js`.
+
+### Connecting to the Backend
+
+The frontend communicates with the backend REST API over HTTP:
+
+| Action | Endpoint |
+|--------|----------|
+| Sign In | `POST /api/auth/signin` |
+| Sign Up | `POST /api/auth/signup` |
+| List Activities | `GET /api/activities` |
+| Create Activity | `POST /api/activities` |
+| Update Activity | `PUT /api/activities/:id` |
+| Delete Activity | `DELETE /api/activities/:id` |
+| Aggregated Stats | `GET /api/stats` |
+
+Authentication uses a ****** stored in `localStorage`. The token is attached automatically to all authenticated requests.
+
+**CORS**: Your backend must allow the frontend origin. If serving locally on port 8080, ensure your Node.js backend sets `Access-Control-Allow-Origin: *` or the specific frontend origin.
+
+### Supported CRUD Capabilities
+
+| Entity | Create | Read / List | Update | Delete |
+|--------|--------|-------------|--------|--------|
+| User Account | ✅ Sign up form | — | — | — |
+| Activity (Ruck Session) | ✅ "Log Ruck" modal | ✅ Activities page + Dashboard | ✅ Edit modal | ✅ Delete confirm dialog |
+| Stats | — | ✅ Dashboard stat cards | — | — |
+
+**Assumptions:**
+- The backend exposes REST endpoints at `BASE_URL` as described above.
+- Pace is auto-calculated in the frontend as `duration_minutes / distance_miles` when both are provided.
+- Duration input is in **minutes** (converted to seconds when sent to the API to match `ActivitySubmissionRequest`).
+- Distance is in **miles** to match the Swift `TrackedActivity` model.
+- If `GET /api/stats` is unavailable, stats are derived client-side from the activities list.
 
 ## Configuration
 Centralized configuration lives in:
