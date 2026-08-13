@@ -23,6 +23,14 @@ const defaults = {
 };
 
 const cloneDefault = (name) => JSON.parse(JSON.stringify(defaults[name]));
+const collectionLocks = new Map();
+
+const withCollectionLock = (name, operation) => {
+    const previousOperation = collectionLocks.get(name) || Promise.resolve();
+    const nextOperation = previousOperation.then(operation, operation);
+    collectionLocks.set(name, nextOperation.catch(() => {}));
+    return nextOperation;
+};
 
 async function ensureCollection(name) {
     const filePath = files[name];
@@ -35,7 +43,7 @@ async function ensureCollection(name) {
     }
 }
 
-async function readCollection(name) {
+async function readCollectionFile(name) {
     await ensureCollection(name);
     const filePath = files[name];
     const raw = await fs.readFile(filePath, 'utf8');
@@ -49,13 +57,30 @@ async function readCollection(name) {
     }
 }
 
-async function writeCollection(name, value) {
+async function writeCollectionFile(name, value) {
     await ensureCollection(name);
     await fs.writeFile(files[name], JSON.stringify(value, null, 2));
     return value;
 }
 
+async function readCollection(name) {
+    return withCollectionLock(name, async () => readCollectionFile(name));
+}
+
+async function writeCollection(name, value) {
+    return withCollectionLock(name, async () => writeCollectionFile(name, value));
+}
+
+async function updateCollection(name, updater) {
+    return withCollectionLock(name, async () => {
+        const currentValue = await readCollectionFile(name);
+        const updatedValue = await updater(currentValue);
+        return writeCollectionFile(name, updatedValue);
+    });
+}
+
 module.exports = {
     readCollection,
-    writeCollection
+    writeCollection,
+    updateCollection
 };

@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 // MARK: - Models & Errors
 enum APIError: LocalizedError {
@@ -100,12 +101,15 @@ class APIClient {
     private let session: URLSession
     private var accessToken: String?
     private let decoder: JSONDecoder
+    private let tokenService = "com.cptraingresilience.RuckingTracker"
+    private let tokenAccount = "rt_access_token"
 
     private init() {
         let config = URLSessionConfiguration.default
         self.session = URLSession(configuration: config)
-        self.accessToken = UserDefaults.standard.string(forKey: "rt_access_token")
         self.decoder = JSONDecoder()
+        self.accessToken = nil
+        self.accessToken = loadStoredToken()
     }
 
     var hasAccessToken: Bool {
@@ -144,7 +148,7 @@ class APIClient {
 
     func signOut() {
         accessToken = nil
-        UserDefaults.standard.removeObject(forKey: "rt_access_token")
+        deleteStoredToken()
     }
 
     // MARK: - Activities
@@ -182,7 +186,73 @@ class APIClient {
 
     private func storeToken(_ token: String) {
         accessToken = token
-        UserDefaults.standard.set(token, forKey: "rt_access_token")
+        storeTokenInKeychain(token)
+    }
+
+    private func loadStoredToken() -> String? {
+        if let keychainToken = loadTokenFromKeychain() {
+            return keychainToken
+        }
+
+        if let legacyToken = UserDefaults.standard.string(forKey: "rt_access_token") {
+            storeTokenInKeychain(legacyToken)
+            UserDefaults.standard.removeObject(forKey: "rt_access_token")
+            return legacyToken
+        }
+
+        return nil
+    }
+
+    private func loadTokenFromKeychain() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: tokenService,
+            kSecAttrAccount as String: tokenAccount,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+
+        guard status == errSecSuccess,
+              let data = item as? Data,
+              let token = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return token
+    }
+
+    private func storeTokenInKeychain(_ token: String) {
+        let tokenData = Data(token.utf8)
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: tokenService,
+            kSecAttrAccount as String: tokenAccount
+        ]
+
+        SecItemDelete(query as CFDictionary)
+
+        let attributes: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: tokenService,
+            kSecAttrAccount as String: tokenAccount,
+            kSecValueData as String: tokenData
+        ]
+
+        SecItemAdd(attributes as CFDictionary, nil)
+    }
+
+    private func deleteStoredToken() {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: tokenService,
+            kSecAttrAccount as String: tokenAccount
+        ]
+
+        SecItemDelete(query as CFDictionary)
+        UserDefaults.standard.removeObject(forKey: "rt_access_token")
     }
 
     // MARK: - Generic Request Handler

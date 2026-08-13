@@ -1,7 +1,7 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
 const { authenticateToken } = require('../middleware/auth');
-const { readCollection, writeCollection } = require('../data/store');
+const { readCollection, updateCollection } = require('../data/store');
 const router = express.Router();
 
 const parseActivity = (body, currentUserId, existingActivity = {}) => {
@@ -44,25 +44,31 @@ const parseActivity = (body, currentUserId, existingActivity = {}) => {
 // Submit Activity
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const activities = await readCollection('activities');
         const parsed = parseActivity(req.body, req.user.userId);
 
         if (parsed.error) {
             return res.status(400).json({ error: parsed.error });
         }
 
-        if (activities.some((activity) => activity.id === parsed.value.id && activity.userId === req.user.userId)) {
-            return res.status(409).json({ error: 'Activity already exists' });
-        }
+        await updateCollection('activities', async (activities) => {
+            if (activities.some((activity) => activity.id === parsed.value.id && activity.userId === req.user.userId)) {
+                const duplicateActivityError = new Error('duplicate-activity');
+                duplicateActivityError.code = 'DUPLICATE_ACTIVITY';
+                throw duplicateActivityError;
+            }
 
-        activities.push(parsed.value);
-        await writeCollection('activities', activities);
+            return [...activities, parsed.value];
+        });
 
         res.status(201).json({
             message: 'Activity submitted',
             activity: parsed.value
         });
     } catch (error) {
+        if (error.code === 'DUPLICATE_ACTIVITY') {
+            return res.status(409).json({ error: 'Activity already exists' });
+        }
+
         res.status(500).json({ error: 'Unable to save activity' });
     }
 });
@@ -119,33 +125,50 @@ router.get('/:activityId', authenticateToken, async (req, res) => {
 // Update Activity
 router.put('/:activityId', authenticateToken, async (req, res) => {
     try {
-        const activities = await readCollection('activities');
-        const index = activities.findIndex(
-            (item) => item.id === req.params.activityId && item.userId === req.user.userId
-        );
+        let updatedActivity;
 
-        if (index === -1) {
-            return res.status(404).json({ error: 'Activity not found' });
-        }
+        await updateCollection('activities', async (activities) => {
+            const index = activities.findIndex(
+                (item) => item.id === req.params.activityId && item.userId === req.user.userId
+            );
 
-        const parsed = parseActivity(
-            { ...req.body, id: req.params.activityId },
-            req.user.userId,
-            activities[index]
-        );
+            if (index === -1) {
+                const missingActivityError = new Error('activity-not-found');
+                missingActivityError.code = 'ACTIVITY_NOT_FOUND';
+                throw missingActivityError;
+            }
 
-        if (parsed.error) {
-            return res.status(400).json({ error: parsed.error });
-        }
+            const parsed = parseActivity(
+                { ...req.body, id: req.params.activityId },
+                req.user.userId,
+                activities[index]
+            );
 
-        activities[index] = parsed.value;
-        await writeCollection('activities', activities);
+            if (parsed.error) {
+                const invalidActivityError = new Error(parsed.error);
+                invalidActivityError.code = 'INVALID_ACTIVITY';
+                throw invalidActivityError;
+            }
+
+            updatedActivity = parsed.value;
+            const nextActivities = [...activities];
+            nextActivities[index] = parsed.value;
+            return nextActivities;
+        });
 
         res.json({
             message: 'Activity updated',
-            activity: parsed.value
+            activity: updatedActivity
         });
     } catch (error) {
+        if (error.code === 'ACTIVITY_NOT_FOUND') {
+            return res.status(404).json({ error: 'Activity not found' });
+        }
+
+        if (error.code === 'INVALID_ACTIVITY') {
+            return res.status(400).json({ error: error.message });
+        }
+
         res.status(500).json({ error: 'Unable to update activity' });
     }
 });
@@ -153,19 +176,26 @@ router.put('/:activityId', authenticateToken, async (req, res) => {
 // Delete Activity
 router.delete('/:activityId', authenticateToken, async (req, res) => {
     try {
-        const activities = await readCollection('activities');
-        const remainingActivities = activities.filter(
-            (item) => !(item.id === req.params.activityId && item.userId === req.user.userId)
-        );
+        await updateCollection('activities', async (activities) => {
+            const remainingActivities = activities.filter(
+                (item) => !(item.id === req.params.activityId && item.userId === req.user.userId)
+            );
 
-        if (remainingActivities.length === activities.length) {
-            return res.status(404).json({ error: 'Activity not found' });
-        }
+            if (remainingActivities.length === activities.length) {
+                const missingActivityError = new Error('activity-not-found');
+                missingActivityError.code = 'ACTIVITY_NOT_FOUND';
+                throw missingActivityError;
+            }
 
-        await writeCollection('activities', remainingActivities);
+            return remainingActivities;
+        });
 
         res.json({ message: 'Activity deleted' });
     } catch (error) {
+        if (error.code === 'ACTIVITY_NOT_FOUND') {
+            return res.status(404).json({ error: 'Activity not found' });
+        }
+
         res.status(500).json({ error: 'Unable to delete activity' });
     }
 });

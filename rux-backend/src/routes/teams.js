@@ -1,7 +1,7 @@
 const express = require('express');
 const { randomUUID } = require('crypto');
 const { authenticateToken } = require('../middleware/auth');
-const { readCollection, writeCollection } = require('../data/store');
+const { readCollection, updateCollection } = require('../data/store');
 const router = express.Router();
 
 router.get('/', async (req, res) => {
@@ -22,7 +22,6 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     try {
-        const teams = await readCollection('teams');
         const team = {
             id: randomUUID(),
             name: name.trim(),
@@ -30,8 +29,7 @@ router.post('/', authenticateToken, async (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        teams.push(team);
-        await writeCollection('teams', teams);
+        await updateCollection('teams', async (teams) => [...teams, team]);
 
         res.status(201).json({
             message: 'Team created',
@@ -45,23 +43,34 @@ router.post('/', authenticateToken, async (req, res) => {
 // Join Team
 router.post('/:teamId/join', authenticateToken, async (req, res) => {
     try {
-        const teams = await readCollection('teams');
-        const teamIndex = teams.findIndex((team) => team.id === req.params.teamId);
+        let updatedTeam;
 
-        if (teamIndex === -1) {
+        await updateCollection('teams', async (teams) => {
+            const teamIndex = teams.findIndex((team) => team.id === req.params.teamId);
+
+            if (teamIndex === -1) {
+                const missingTeamError = new Error('team-not-found');
+                missingTeamError.code = 'TEAM_NOT_FOUND';
+                throw missingTeamError;
+            }
+
+            const members = Array.isArray(teams[teamIndex].members) ? [...teams[teamIndex].members] : [];
+            if (!members.includes(req.user.userId)) {
+                members.push(req.user.userId);
+            }
+
+            updatedTeam = { ...teams[teamIndex], members };
+            const nextTeams = [...teams];
+            nextTeams[teamIndex] = updatedTeam;
+            return nextTeams;
+        });
+
+        res.json({ message: 'Joined team successfully', team: updatedTeam });
+    } catch (error) {
+        if (error.code === 'TEAM_NOT_FOUND') {
             return res.status(404).json({ error: 'Team not found' });
         }
 
-        const members = Array.isArray(teams[teamIndex].members) ? teams[teamIndex].members : [];
-        if (!members.includes(req.user.userId)) {
-            members.push(req.user.userId);
-        }
-
-        teams[teamIndex] = { ...teams[teamIndex], members };
-        await writeCollection('teams', teams);
-
-        res.json({ message: 'Joined team successfully', team: teams[teamIndex] });
-    } catch (error) {
         res.status(500).json({ error: 'Unable to join team' });
     }
 });

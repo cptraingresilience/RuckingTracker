@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
 const router = express.Router();
-const { readCollection, writeCollection } = require('../data/store');
+const { readCollection, updateCollection } = require('../data/store');
 const { getAuthSecrets } = require('../utils/authConfig');
 
 const generateTokens = (userId, email) => {
@@ -32,38 +32,46 @@ router.post('/signup', async (req, res) => {
     }
 
     try {
-        const users = await readCollection('users');
         const normalizedEmail = normalizeEmail(email);
         const trimmedUsername = username.trim();
+        const passwordHash = await bcrypt.hash(password, 10);
+        let createdUser;
 
-        if (users.some((user) => user.email === normalizedEmail)) {
-            return res.status(409).json({ error: 'An account with this email already exists' });
-        }
+        await updateCollection('users', async (users) => {
+            if (users.some((user) => user.email === normalizedEmail)) {
+                const duplicateUserError = new Error('duplicate-user');
+                duplicateUserError.code = 'DUPLICATE_USER';
+                throw duplicateUserError;
+            }
 
-        const user = {
-            id: randomUUID(),
-            email: normalizedEmail,
-            username: trimmedUsername,
-            passwordHash: await bcrypt.hash(password, 10),
-            createdAt: new Date().toISOString()
-        };
+            createdUser = {
+                id: randomUUID(),
+                email: normalizedEmail,
+                username: trimmedUsername,
+                passwordHash,
+                createdAt: new Date().toISOString()
+            };
 
-        users.push(user);
-        await writeCollection('users', users);
+            return [...users, createdUser];
+        });
 
-        const { accessToken, refreshToken } = generateTokens(user.id, user.email);
+        const { accessToken, refreshToken } = generateTokens(createdUser.id, createdUser.email);
 
         res.status(201).json({
             message: 'Signup successful',
             accessToken,
             refreshToken,
             user: {
-                id: user.id,
-                email: user.email,
-                username: user.username
+                id: createdUser.id,
+                email: createdUser.email,
+                username: createdUser.username
             }
         });
     } catch (error) {
+        if (error.code === 'DUPLICATE_USER') {
+            return res.status(409).json({ error: 'An account with this email already exists' });
+        }
+
         res.status(500).json({ error: 'Unable to create account' });
     }
 });

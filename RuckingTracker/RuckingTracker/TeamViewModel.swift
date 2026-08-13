@@ -68,7 +68,6 @@ class TeamViewModel: ObservableObject {
                     subtitle: "\($0.totalActivities) rucks"
                 )
             }
-            sortLeaderboardByScore()
             errorMessage = nil
         } catch {
             leaderboard = []
