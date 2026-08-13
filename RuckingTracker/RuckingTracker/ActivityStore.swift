@@ -107,6 +107,30 @@ final class ActivityStore: ObservableObject {
         }
     }
 
+    // MARK: - Update
+    func update(_ activity: TrackedActivity) {
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(activity)
+            let url = directoryURL.appendingPathComponent("\(activity.id.uuidString).json")
+            try data.write(to: url, options: .atomic)
+            // Replace in array to trigger SwiftUI refresh
+            if let idx = activities.firstIndex(where: { $0.id == activity.id }) {
+                activities[idx] = activity
+            }
+        } catch {
+            print("Error updating activity: \(error)")
+        }
+    }
+
+    // MARK: - Delete
+    func delete(_ activity: TrackedActivity) {
+        let url = directoryURL.appendingPathComponent("\(activity.id.uuidString).json")
+        try? FileManager.default.removeItem(at: url)
+        activities.removeAll { $0.id == activity.id }
+    }
+
     // MARK: - Convenience
     func addActivity(_ activity: TrackedActivity) {
         save(activity) // saves to disk and updates @Published array
