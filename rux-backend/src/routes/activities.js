@@ -124,7 +124,7 @@ router.put('/:activityId', authenticateToken, async (req, res) => {
             (item) => item.id === req.params.activityId && item.userId === req.user.userId
         );
 
-        if (index == -1) {
+        if (index === -1) {
             return res.status(404).json({ error: 'Activity not found' });
         }
 

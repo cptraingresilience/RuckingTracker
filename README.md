@@ -142,11 +142,9 @@ Verify the backend is reachable at `http://localhost:3000` (or your configured p
 
 ### Backend Connection Configuration
 
-The backend base URL is set in **`RuckingTracker/APIClient.swift`**:
-
-```swift
-private let baseURL = "http://172.20.10.8:3000/api"
-```
+The iOS app reads the backend base URL from:
+- `Info.plist` → `BackendBaseURL`
+- or `UserDefaults` → `rt_backend_url` (runtime override)
 
 Change this value to match your backend host before building:
 - Local simulator: `http://localhost:3000/api`
@@ -158,12 +156,12 @@ The app stores the access token received from sign-in/sign-up in `UserDefaults` 
 
 
 ## Configuration
-- **Backend base URL**: edit `private let baseURL` in `RuckingTracker/APIClient.swift`
+- **Backend base URL**: set `BackendBaseURL` in `/home/runner/work/RuckingTracker/RuckingTracker/RuckingTracker/RuckingTracker/Info.plist`, or override at runtime with `UserDefaults` key `rt_backend_url`
 - **Backend `.env`**: `PORT`, `DB_PATH`, `AUTH_SECRET` (see Running the Local Backend above)
 
 ## API Reference (local backend)
 
-Base URL: `http://<host>:3000/api` (configure `baseURL` in `APIClient.swift`)
+Base URL: `http://<host>:3000/api` (configure `BackendBaseURL` in `Info.plist` or `rt_backend_url` in `UserDefaults`)
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
@@ -173,7 +171,7 @@ Base URL: `http://<host>:3000/api` (configure `baseURL` in `APIClient.swift`)
 | POST | `/activities` | Create a new activity | Yes |
 | PUT | `/activities/:id` | Update an activity | Yes |
 | DELETE | `/activities/:id` | Delete an activity | Yes |
-| GET | `/stats` | Aggregated stats | Yes |
+| GET | `/activities/stats/summary` | Aggregated stats | Yes |
 
 **Auth**: send an `Authorization: ****** header on authenticated routes.
 
