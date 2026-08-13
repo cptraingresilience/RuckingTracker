@@ -129,6 +129,8 @@ class APIClient {
 
         if requiresAuth, let token = accessToken {
             request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        } else if requiresAuth {
+            throw APIError.unauthorized
         }
 
         if let body = body {

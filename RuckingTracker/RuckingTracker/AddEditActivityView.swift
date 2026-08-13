@@ -20,7 +20,6 @@ struct AddEditActivityView: View {
 
     @State private var showValidationAlert = false
     @State private var validationMessage = ""
-    @State private var isSaving = false
 
     private var isEditing: Bool { existingActivity != nil }
 
@@ -79,10 +78,9 @@ struct AddEditActivityView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isSaving ? "Saving…" : "Save") {
+                    Button("Save") {
                         saveActivity()
                     }
-                    .disabled(isSaving)
                 }
             }
             .alert("Missing Info", isPresented: $showValidationAlert) {
@@ -135,8 +133,6 @@ struct AddEditActivityView: View {
         let packWeight = Double(packWeightText)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
 
-        isSaving = true
-
         if let existing = existingActivity {
             // Edit mode — mutate the existing object and persist
             existing.title = trimmedTitle
@@ -162,7 +158,6 @@ struct AddEditActivityView: View {
             ActivityStore.shared.save(activity)
         }
 
-        isSaving = false
         dismiss()
     }
 }

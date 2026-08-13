@@ -157,10 +157,6 @@ The app stores the access token received from sign-in/sign-up in `UserDefaults` 
 **Local data is always the source of truth.** If the backend is unreachable, all create/edit/delete operations still work locally.
 
 
-### Supported CRUD Capabilities
-
-See [Supported CRUD Operations](#supported-crud-operations) above.
-
 ## Configuration
 - **Backend base URL**: edit `private let baseURL` in `RuckingTracker/APIClient.swift`
 - **Backend `.env`**: `PORT`, `DB_PATH`, `AUTH_SECRET` (see Running the Local Backend above)
@@ -179,7 +175,7 @@ Base URL: `http://<host>:3000/api` (configure `baseURL` in `APIClient.swift`)
 | DELETE | `/activities/:id` | Delete an activity | Yes |
 | GET | `/stats` | Aggregated stats | Yes |
 
-**Auth**: send `Authorization: ****** on authenticated routes.
+**Auth**: send an `Authorization: ****** header on authenticated routes.
 
 Request body for create/update:
 ```json
