@@ -11,19 +11,29 @@ import Combine
 @MainActor
 class LogViewModel: ObservableObject {
     @Published var activities: [TrackedActivity] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
     
+    private static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    private let store: ActivityStore
     private var cancellables = Set<AnyCancellable>()
     
-    // FIX: Make the parameter optional (ActivityStore?) and remove the default assignment
-    // to resolve the Swift 6 warning.
     init(activityStore: ActivityStore? = nil) {
-        // Resolve dependency: use injected store or safely access the isolated static 'shared' property
-        let store = activityStore ?? ActivityStore.shared
+        self.store = activityStore ?? ActivityStore.shared
         
-        // Automatically observe updates from ActivityStore
         store.$activities
             .receive(on: DispatchQueue.main)
             .assign(to: &$activities)
+
+        store.$lastSyncError
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$errorMessage)
+
+        if !Self.isRunningTests {
+            Task {
+                await refresh()
+            }
+        }
     }
     
     // MARK: - Aggregated Metrics
@@ -51,6 +61,18 @@ class LogViewModel: ObservableObject {
         let maxDistance = activities.map { $0.distance }.max() ?? 0
         return String(format: "%.1f", maxDistance)
     }
+
+    func refresh() async {
+        isLoading = true
+        await store.refreshFromBackendIfAvailable()
+        isLoading = false
+    }
+
+    func deleteActivity(_ activity: TrackedActivity) {
+        store.delete(activity)
+    }
+
+    func clearError() {
+        store.clearSyncError()
+    }
 }
-
-

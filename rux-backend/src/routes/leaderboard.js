@@ -1,17 +1,38 @@
 const express = require('express');
 const router = express.Router();
+const { readCollection } = require('../data/store');
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const { period = 'weekly' } = req.query;
-    
-    // TODO: Fetch from database
-    res.json({
-        period,
-        entries: [
-            { rank: 1, username: 'runner1', totalDistance: 150, totalActivities: 12 },
-            { rank: 2, username: 'runner2', totalDistance: 128, totalActivities: 10 }
-        ]
-    });
+
+    try {
+        const [activities, users] = await Promise.all([
+            readCollection('activities'),
+            readCollection('users')
+        ]);
+
+        const leaderboard = users
+            .map((user) => {
+                const userActivities = activities.filter((activity) => activity.userId === user.id);
+                const totalDistance = userActivities.reduce((sum, activity) => sum + activity.distance, 0);
+
+                return {
+                    username: user.username,
+                    totalDistance,
+                    totalActivities: userActivities.length
+                };
+            })
+            .filter((entry) => entry.totalActivities > 0)
+            .sort((left, right) => right.totalDistance - left.totalDistance)
+            .map((entry, index) => ({
+                rank: index + 1,
+                ...entry
+            }));
+
+        res.json({ period, entries: leaderboard });
+    } catch (error) {
+        res.status(500).json({ error: 'Unable to load leaderboard' });
+    }
 });
 
 module.exports = router;

@@ -20,7 +20,7 @@ struct LoginView: View {
                 .bold()
                 .padding(.bottom, 12)
 
-            TextField("Username or Email", text: $viewModel.username)
+            TextField("Email", text: $viewModel.username)
                 .padding()
                 .background(Color.blue.opacity(0.12))
                 .cornerRadius(10)
@@ -110,4 +110,3 @@ struct GoogleSignInView: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
-

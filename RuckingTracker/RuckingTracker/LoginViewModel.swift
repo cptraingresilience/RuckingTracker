@@ -22,15 +22,27 @@ class LoginViewModel: ObservableObject {
 
     // MARK: - Email Login
     func loginWithEmail() {
+        let trimmedEmail = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty else {
+            errorMessage = "Please enter your email."
+            return
+        }
+
         self.isLoading = true
-        AuthService.shared.signInWithEmail(email: username, password: password) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success(_):
+        self.errorMessage = nil
+
+        Task { [weak self] in
+            do {
+                _ = try await APIClient.shared.signIn(email: trimmedEmail, password: password)
+                await ActivityStore.shared.refreshFromBackendIfAvailable()
+                await MainActor.run {
+                    self?.isLoading = false
                     self?.isLoggedIn = true
                     self?.errorMessage = nil
-                case .failure(let error):
+                }
+            } catch {
+                await MainActor.run {
+                    self?.isLoading = false
                     self?.isLoggedIn = false
                     self?.errorMessage = Self.errorDescription(error)
                 }
@@ -94,6 +106,8 @@ class LoginViewModel: ObservableObject {
             case .credentialError(let message):
                 return "Credential error: \(message)"
             }
+        case is APIError:
+            return error.localizedDescription
         default:
             return error.localizedDescription
         }

@@ -27,6 +27,13 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/activities', require('./routes/activities'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/teams', require('./routes/teams'));
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date(),
+        environment: process.env.NODE_ENV
+    });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -13,22 +13,75 @@ struct LeaderRowData: Identifiable {
     let rank: Int
     let name: String
     let score: Int
+    let subtitle: String
+
+    init(rank: Int, name: String, score: Int, subtitle: String = "") {
+        self.rank = rank
+        self.name = name
+        self.score = score
+        self.subtitle = subtitle
+    }
 }
 
+@MainActor
 class TeamViewModel: ObservableObject {
-    @Published var selectedGroup: String = "TX Special Forces Mentorship"
+    @Published var selectedGroup: String = "ODA 555"
     @Published var groups: [String] = [
         "ODA 555",
         "TX Special Forces Mentorship",
         "Drinking Crew",
         "Go Ruck Friends"
     ]
-    @Published var leaderboard: [LeaderRowData] = [
-        LeaderRowData(rank: 1, name: "SFC Rivera", score: 178),
-        LeaderRowData(rank: 2, name: "SSG Torres", score: 163),
-        LeaderRowData(rank: 3, name: "SGT Yeager", score: 148),
-        LeaderRowData(rank: 4, name: "SPC Jones", score: 134)
-    ]
-    
-    // Add functions to load/sort leaderboard data as needed, e.g. from network or ActivityStore
+    @Published var leaderboard: [LeaderRowData] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    private static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
+    init() {
+        if !Self.isRunningTests {
+            Task {
+                await loadTeamData()
+            }
+        }
+    }
+
+    func loadTeamData() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            async let teamsTask = APIClient.shared.getTeams()
+            async let leaderboardTask = APIClient.shared.getLeaderboard()
+
+            let (teams, leaderboardEntries) = try await (teamsTask, leaderboardTask)
+            groups = teams.map(\.name)
+
+            if selectedGroup.isEmpty || !groups.contains(selectedGroup) {
+                selectedGroup = groups.first ?? ""
+            }
+
+            leaderboard = leaderboardEntries.map {
+                LeaderRowData(
+                    rank: $0.rank,
+                    name: $0.username,
+                    score: Int($0.totalDistance.rounded()),
+                    subtitle: "\($0.totalActivities) rucks"
+                )
+            }
+            sortLeaderboardByScore()
+            errorMessage = nil
+        } catch {
+            leaderboard = []
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func sortLeaderboardByScore() {
+        leaderboard.sort { left, right in
+            if left.score == right.score {
+                return left.rank < right.rank
+            }
+            return left.score > right.score
+        }
+    }
 }

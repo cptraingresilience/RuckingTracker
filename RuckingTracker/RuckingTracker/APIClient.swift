@@ -8,8 +8,11 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL: return "Invalid URL"
+        case .unauthorized: return "Please sign in to continue."
         case .serverError(let code): return "Server error: \(code)"
-        default: return "An error occurred"
+        case .decodingError(let message): return message
+        case .unknown(let message): return message
+        case .noInternetConnection: return "No internet connection."
         }
     }
 }
@@ -19,24 +22,21 @@ struct SignupRequest: Encodable { let email, password, username: String }
 struct SigninRequest: Encodable { let email, password: String }
 
 struct AuthResponse: Codable {
+    let message: String?
     let accessToken: String
     let refreshToken: String
     let user: UserDTO
 }
 
 struct UserDTO: Codable, Identifiable {
-    let id, email, username: String
+    let id: String
+    let email: String
+    let username: String
     let fullName: String?
 }
 
 struct ActivitySubmissionRequest: Codable {
-    let title: String
-    let notes: String?
-    let distance, duration, pace, packWeight: Double?
-    let startedAt, endedAt: String
-}
-
-struct ActivityUpdateRequest: Codable {
+    let id: String
     let title: String
     let notes: String?
     let distance, duration, pace, packWeight: Double?
@@ -46,25 +46,84 @@ struct ActivityUpdateRequest: Codable {
 struct ActivityResponse: Codable, Identifiable {
     let id: String
     let title: String
-    let distance, duration, pace: Double
-    let isValidated: Bool
+    let notes: String
+    let distance: Double
+    let duration: Double
+    let pace: Double
+    let packWeight: Double?
+    let startedAt: String
+    let endedAt: String?
     let createdAt: String
+    let updatedAt: String?
+}
+
+struct ActivitiesResponse: Codable {
+    let activities: [ActivityResponse]
+}
+
+struct ActivityMutationResponse: Codable {
+    let message: String
+    let activity: ActivityResponse
+}
+
+struct TeamResponse: Codable, Identifiable {
+    let id: String
+    let name: String
+    let members: [String]?
+}
+
+struct TeamsResponse: Codable {
+    let teams: [TeamResponse]
+}
+
+struct LeaderboardEntryResponse: Codable, Identifiable {
+    var id: String { "\(rank)-\(username)" }
+    let rank: Int
+    let username: String
+    let totalDistance: Double
+    let totalActivities: Int
+}
+
+struct LeaderboardResponse: Codable {
+    let period: String
+    let entries: [LeaderboardEntryResponse]
+}
+
+private struct ErrorResponse: Decodable {
+    let error: String
 }
 
 // MARK: - API Client
 class APIClient {
     static let shared = APIClient()
 
-    // Change this to match your backend host.
-    // Default: developer LAN IP. For local dev use http://localhost:3000/api
-    private let baseURL = "http://172.20.10.8:3000/api"
     private let session: URLSession
     private var accessToken: String?
+    private let decoder: JSONDecoder
 
     private init() {
         let config = URLSessionConfiguration.default
         self.session = URLSession(configuration: config)
         self.accessToken = UserDefaults.standard.string(forKey: "rt_access_token")
+        self.decoder = JSONDecoder()
+    }
+
+    var hasAccessToken: Bool {
+        accessToken?.isEmpty == false
+    }
+
+    private var baseURL: String {
+        if let customURL = UserDefaults.standard.string(forKey: "rt_backend_url"),
+           !customURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return customURL
+        }
+
+        if let configuredURL = Bundle.main.object(forInfoDictionaryKey: "BackendBaseURL") as? String,
+           !configuredURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return configuredURL
+        }
+
+        return "http://localhost:3000/api"
     }
 
     // MARK: - Auth
@@ -91,19 +150,32 @@ class APIClient {
     // MARK: - Activities
 
     func getActivities() async throws -> [ActivityResponse] {
-        return try await request(url: "\(baseURL)/activities", method: "GET", requiresAuth: true)
+        let response: ActivitiesResponse = try await request(url: "\(baseURL)/activities", method: "GET", requiresAuth: true)
+        return response.activities
     }
 
     func submitActivity(_ activity: ActivitySubmissionRequest) async throws -> ActivityResponse {
-        return try await request(url: "\(baseURL)/activities", method: "POST", body: activity, requiresAuth: true)
+        let response: ActivityMutationResponse = try await request(url: "\(baseURL)/activities", method: "POST", body: activity, requiresAuth: true)
+        return response.activity
     }
 
-    func updateActivity(id: String, _ activity: ActivityUpdateRequest) async throws -> ActivityResponse {
-        return try await request(url: "\(baseURL)/activities/\(id)", method: "PUT", body: activity, requiresAuth: true)
+    func updateActivity(id: String, _ activity: ActivitySubmissionRequest) async throws -> ActivityResponse {
+        let response: ActivityMutationResponse = try await request(url: "\(baseURL)/activities/\(id)", method: "PUT", body: activity, requiresAuth: true)
+        return response.activity
     }
 
     func deleteActivity(id: String) async throws {
-        let _: EmptyResponse = try await request(url: "\(baseURL)/activities/\(id)", method: "DELETE", requiresAuth: true)
+        let _: DeleteResponse = try await request(url: "\(baseURL)/activities/\(id)", method: "DELETE", requiresAuth: true)
+    }
+
+    func getTeams() async throws -> [TeamResponse] {
+        let response: TeamsResponse = try await request(url: "\(baseURL)/teams", method: "GET")
+        return response.teams
+    }
+
+    func getLeaderboard() async throws -> [LeaderboardEntryResponse] {
+        let response: LeaderboardResponse = try await request(url: "\(baseURL)/leaderboard", method: "GET")
+        return response.entries
     }
 
     // MARK: - Token Storage
@@ -114,6 +186,14 @@ class APIClient {
     }
 
     // MARK: - Generic Request Handler
+
+    private func request<T: Decodable>(
+        url: String,
+        method: String,
+        requiresAuth: Bool = false
+    ) async throws -> T {
+        try await request(url: url, method: method, body: Optional<String>.none, requiresAuth: requiresAuth)
+    }
 
     private func request<T: Decodable, B: Encodable>(
         url: String,
@@ -137,7 +217,13 @@ class APIClient {
             request.httpBody = try JSONEncoder().encode(body)
         }
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response): (Data, URLResponse)
+
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.unknown(error.localizedDescription)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.unknown("Invalid response")
@@ -148,12 +234,21 @@ class APIClient {
         }
 
         guard 200..<300 ~= httpResponse.statusCode else {
+            if let errorResponse = try? decoder.decode(ErrorResponse.self, from: data) {
+                throw APIError.unknown(errorResponse.error)
+            }
+
             throw APIError.serverError(httpResponse.statusCode)
         }
 
-        return try JSONDecoder().decode(T.self, from: data)
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError("Could not read the server response.")
+        }
     }
 }
 
-// Used as a placeholder return type for DELETE responses with no body
-private struct EmptyResponse: Decodable {}
+private struct DeleteResponse: Decodable {
+    let message: String
+}

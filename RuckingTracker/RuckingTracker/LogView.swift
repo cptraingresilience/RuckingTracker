@@ -42,7 +42,33 @@ struct LogView: View {
 
                 Divider()
 
-                if viewModel.activities.isEmpty {
+                if let errorMessage = viewModel.errorMessage {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Button("Dismiss") {
+                            viewModel.clearError()
+                        }
+                        .font(.footnote.bold())
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .background(Color.orange.opacity(0.08))
+                }
+ 
+                if viewModel.isLoading && viewModel.activities.isEmpty {
+                    VStack(spacing: 12) {
+                        Spacer()
+                        ProgressView()
+                        Text("Loading your rucks...")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                } else if viewModel.activities.isEmpty {
                     // Empty state
                     VStack(spacing: 16) {
                         Spacer()
@@ -55,6 +81,9 @@ struct LogView: View {
                         Text("Tap + to log your first ruck")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Button("Refresh") {
+                            Task { await viewModel.refresh() }
+                        }
                         Spacer()
                     }
                 } else {
@@ -71,11 +100,14 @@ struct LogView: View {
                         }
                         .onDelete { indexSet in
                             for index in indexSet {
-                                ActivityStore.shared.delete(viewModel.activities[index])
+                                viewModel.deleteActivity(viewModel.activities[index])
                             }
                         }
                     }
                     .listStyle(.plain)
+                    .refreshable {
+                        await viewModel.refresh()
+                    }
                 }
             }
             .navigationTitle("Activity Log")
@@ -97,4 +129,3 @@ struct LogView: View {
         }
     }
 }
-
