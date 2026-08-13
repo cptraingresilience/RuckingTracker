@@ -11,13 +11,13 @@ function el(tag, cls, html) {
   return e;
 }
 
-function showAlert(el, msg, type = "error") {
-  el.textContent = msg;
-  el.className = `alert alert-${type} show`;
+function showAlert(alertEl, msg, type = "error") {
+  alertEl.textContent = msg;
+  alertEl.className = `alert alert-${type} show`;
 }
 
-function hideAlert(el) {
-  el.className = "alert";
+function hideAlert(alertEl) {
+  alertEl.className = "alert";
 }
 
 function setLoading(btn, loading) {
