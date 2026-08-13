@@ -16,9 +16,16 @@ struct LeaderRowView: View {
                 .bold()
                 .frame(width: 36)
                 .foregroundColor(.orange)
-            Text(row.name)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .font(.body)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(row.name)
+                    .font(.body)
+                if !row.subtitle.isEmpty {
+                    Text(row.subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             Text("\(row.score)")
                 .fontWeight(.bold)
                 .foregroundColor(.blue)

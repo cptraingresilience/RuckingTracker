@@ -1,10 +1,6 @@
 # RuckingTracker
 
-RuckingTracker — RuckingTracker app with backend built in (desktop)
-
-A desktop application for tracking rucks (ruck marches / weighted walks), logging sessions, viewing historical statistics, and exporting or syncing data. The app is built primarily in Swift (desktop client) with a built-in backend component (JavaScript) to provide local API services and persistence.
-
-> NOTE: This README is a detailed draft. Please replace any placeholder values (e.g., Xcode versions, Node versions, DB types, environment variables) with the actual project-specific values if they differ.
+A native **iOS app** for tracking rucks (weighted walks / ruck marches), built with SwiftUI. Log sessions, view history, track stats, and optionally sync with a local Node.js backend.
 
 ## Table of Contents
 - [Key Features](#key-features)
@@ -12,8 +8,12 @@ A desktop application for tracking rucks (ruck marches / weighted walks), loggin
 - [Requirements](#requirements)
 - [Installation — Development](#installation---development)
 - [Running the App](#running-the-app)
+  - [Running the Swift iOS App](#running-the-swift-ios-app)
   - [Running the Local Backend (JS)](#running-the-local-backend-js)
-  - [Running the Swift Desktop App](#running-the-swift-desktop-app)
+- [iOS App — UI & CRUD Capabilities](#ios-app--ui--crud-capabilities)
+  - [Screens Overview](#screens-overview)
+  - [Supported CRUD Operations](#supported-crud-operations)
+  - [Backend Connection Configuration](#backend-connection-configuration)
 - [Configuration](#configuration)
 - [API Reference (local backend)](#api-reference-local-backend)
 - [Data & Persistence](#data--persistence)
@@ -26,30 +26,35 @@ A desktop application for tracking rucks (ruck marches / weighted walks), loggin
 - [Contact](#contact)
 
 ## Key Features
-- Create, edit, and delete ruck sessions.
-- Track distance, duration, average pace, elevation, load (weight carried).
-- Local built-in backend to manage data and provide a local API.
-- Session history, filtering, and basic charts/statistics.
-- Export and import sessions (CSV/JSON).
-- Optional sync/export to external services (future/optional).
+- **Log rucks manually** — title, date, distance (mi), duration (min), pack weight (lb), notes.
+- **Live GPS tracking** — start/stop a ruck session from the Activity tab; saves automatically.
+- **Activity history** — scroll through all logged rucks with distance and duration at a glance.
+- **Detail view** — tap any ruck to see all metrics, notes, and manage the record.
+- **Edit rucks** — update any field on a saved ruck.
+- **Delete rucks** — swipe-to-delete in the list or tap Delete on the detail screen.
+- **Stats dashboard** — total miles, average pace, total time, and personal best distance.
+- **Team leaderboard** — view group rankings and scores.
+- **Settings** — notifications, dark mode, unit preference (Imperial/Metric).
+- **Optional backend sync** — activities can be submitted to a Node.js REST API (configurable).
 
 ## Architecture
-- Desktop client: Swift (macOS) — UI built with SwiftUI / AppKit (update to actual).
-- Local backend: JavaScript (Node.js) — small REST API used by the client for persistence and business logic.
-- Data store: local persistence (Core Data / SQLite / file-based JSON) — replace with actual DB used.
-- Communication: client ↔ local backend via HTTP (localhost) or direct IPC if implemented.
+- **iOS client**: Swift + SwiftUI — all screens are native SwiftUI views.
+- **Local persistence**: File-based JSON storage via `ActivityStore` (documents directory).
+- **Optional backend**: Node.js REST API (`APIClient.swift`) — used for account creation, sign-in, and optional activity sync. Requires a running backend server.
+- **Firebase Auth**: Used for email/Google sign-in on the device.
 
-Diagram (high level):
-Client (Swift) ↔ Local Backend (Node.js) ↔ Local DB (SQLite / Core Data)  
-Optional: Sync to remote server or cloud storage (TBD)
+```
+iOS App (SwiftUI)
+  ├── ActivityStore   ← local JSON persistence (source of truth)
+  └── APIClient       ← optional HTTP sync to Node.js backend
+        └── Node.js backend ↔ Database
+```
 
 ## Requirements
-- macOS (version X or later) — replace X with the minimum supported version (e.g., macOS 12+)
-- Xcode (version Y or later) — replace Y with required Xcode version (e.g., Xcode 14+)
-- Node.js (version Z or later) for the local backend (e.g., Node 18+)
-- npm / pnpm / yarn (as appropriate)
-- Swift toolchain (if using Swift Package Manager or command-line builds)
-- (Optional) Homebrew for installing dependencies
+- macOS with Xcode 16+ (required for `PBXFileSystemSynchronizedRootGroup` support)
+- iOS 15+ deployment target
+- Node.js 18+ (only required if running the optional local backend)
+- Firebase project configured (see `GoogleService-Info.plist`)
 
 ## Installation — Development
 
@@ -81,19 +86,27 @@ Notes:
 
 ## Running the App
 
-### Running the Local Backend (JS)
-If the backend is a Node.js service, start it before launching the client (if the client expects an HTTP API on localhost).
+### Running the Swift iOS App
 
-Example:
+1. Open `RuckingTracker/RuckingTracker.xcodeproj` in Xcode 16+.
+2. Select the `RuckingTracker` scheme and an iOS Simulator (or a connected device).
+3. Press **Cmd+R** to build and run.
+
+> The app stores activity data locally on the device (JSON files in the Documents directory). The optional backend is not required to use the core features.
+
+### Running the Local Backend (JS)
+
+The backend is optional. Start it if you want account creation / activity sync over the network.
+
 ```bash
 cd backend
-# development
-npm run dev
-# or production
-npm start
+npm install
+npm run dev      # development
+# or
+npm start        # production
 ```
 
-Typical environment variable examples (create `.env` in backend folder):
+Create a `.env` file in the `backend/` folder:
 ```
 PORT=3000
 DB_PATH=./data/rucks.db
@@ -101,65 +114,80 @@ NODE_ENV=development
 AUTH_SECRET=replace-with-secret
 ```
 
-Confirm the backend API is reachable at http://localhost:3000 (or configured port).
+Verify the backend is reachable at `http://localhost:3000` (or your configured port/IP).
 
-### Running the Swift Desktop App
-- In Xcode select the `RuckingTracker` scheme and run (Cmd+R).
-- If the app requires the backend, ensure the backend is running on the configured port before launching.
-- For command-line builds:
-```bash
-xcodebuild -scheme RuckingTracker -configuration Debug
-open build/Debug/RuckingTracker.app
-```
-(Replace scheme and paths with real values used by the project.)
+## iOS App — UI & CRUD Capabilities
+
+### Screens Overview
+
+| Tab | Screen | Description |
+|-----|--------|-------------|
+| 🗺 Activity | `MapView` | Live GPS ruck tracking — tap Start/Stop to record a session |
+| 📊 Log | `LogView` | Full activity history with stats, add/edit/delete rucks |
+| 👥 Team | `TeamView` | Group leaderboard |
+| 👤 Profile | `ProfileView` | User stats summary |
+| ⚙️ Settings | `SettingsView` | Notifications, dark mode, unit preference |
+
+### Supported CRUD Operations
+
+| Operation | How |
+|-----------|-----|
+| **Create** | `LogView` → tap **+** in the top-right → fill in the form → Save |
+| **Create (GPS)** | `MapView` → tap **Start Ruck** → tap **Stop & Save** |
+| **Read / List** | `LogView` scrollable list; stats cards at the top |
+| **Read (detail)** | Tap any ruck card → `ActivityDetailView` (all metrics + notes) |
+| **Update** | Tap any ruck card → **Edit** button (top-right) → edit form → Save |
+| **Delete** | Swipe left on a ruck in the list → Delete, **or** open detail → Delete Ruck button |
+| **Sign Up** | `LoginView` → **Create one** link → `SignUpView` form |
+
+### Backend Connection Configuration
+
+The iOS app reads the backend base URL from:
+- `Info.plist` → `BackendBaseURL`
+- or `UserDefaults` → `rt_backend_url` (runtime override)
+
+Change this value to match your backend host before building:
+- Local simulator: `http://localhost:3000/api`
+- Device on same network: `http://<your-mac-ip>:3000/api`
+
+The app stores the access token received from sign-in/sign-up in the iOS Keychain and attaches it automatically to authenticated API requests.
+
+**Local data remains available when the backend is unreachable.** The app still lets you create, edit, and delete rucks locally, then attempts backend sync when an API token is available.
+
 
 ## Configuration
-Centralized configuration lives in:
-- Backend: `.env` or config file in `backend/`
-- Client: app Settings, or `Config.plist` / environment variables at build time
-
-Common variables:
-- API_BASE_URL — e.g., `http://localhost:3000/api/v1`
-- DB_PATH — path to local DB for backend
-- LOG_LEVEL — `debug` | `info` | `warn` | `error`
-- AUTH_SECRET — secret for signing tokens (if authentication is used)
-
-Placeholders:
-- Replace `PORT`, `DB_PATH`, and `AUTH_SECRET` in the backend `.env` with appropriate values.
+- **Backend base URL**: set `BackendBaseURL` in `RuckingTracker/RuckingTracker/Info.plist`, or override at runtime with `UserDefaults` key `rt_backend_url`
+- **Backend `.env`**: `PORT`, `DB_PATH`, `AUTH_SECRET` (see Running the Local Backend above)
 
 ## API Reference (local backend)
-Below are example endpoints. Update these to match the actual backend implementation.
 
-Base URL: http://localhost:3000/api/v1
+Base URL: `http://<host>:3000/api` (configure `BackendBaseURL` in `Info.plist` or `rt_backend_url` in `UserDefaults`)
 
-- GET /rucks
-  - Fetch list of ruck sessions
-  - Params: ?limit=20&page=1&from=YYYY-MM-DD&to=YYYY-MM-DD
-- GET /rucks/:id
-  - Fetch one ruck session
-- POST /rucks
-  - Create a ruck session
-  - Body (JSON):
-    {
-      "date": "2026-08-13T07:30:00Z",
-      "distance_km": 8.5,
-      "duration_seconds": 3600,
-      "load_kg": 15,
-      "notes": "Hill repeats"
-    }
-- PUT /rucks/:id
-  - Update a ruck session
-- DELETE /rucks/:id
-  - Delete a ruck session
-- GET /stats
-  - Returns aggregated stats: total distance, total duration, average pace, rucks by month
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/auth/signup` | Create account → returns `accessToken` | No |
+| POST | `/auth/signin` | Sign in → returns `accessToken` | No |
+| GET | `/activities` | List all activities | Yes |
+| POST | `/activities` | Create a new activity | Yes |
+| PUT | `/activities/:id` | Update an activity | Yes |
+| DELETE | `/activities/:id` | Delete an activity | Yes |
+| GET | `/activities/stats/summary` | Aggregated stats | Yes |
 
-Authentication (if implemented):
-- POST /auth/login
-- POST /auth/register
-- Use Authorization: Bearer <token> for protected routes
+**Auth**: include a bearer access token in the `Authorization` header on authenticated routes.
 
-Adjust endpoints to reflect actual routes used by the backend.
+Request body for create/update:
+```json
+{
+  "title": "Morning Ruck",
+  "notes": "Hill repeats",
+  "distance": 4.5,
+  "duration": 3600,
+  "pace": 13.3,
+  "packWeight": 35,
+  "startedAt": "2026-08-13T07:30:00Z",
+  "endedAt": "2026-08-13T08:30:00Z"
+}
+```
 
 ## Data & Persistence
 - The client displays and edits ruck sessions. All write operations are performed via the local backend API.
@@ -170,10 +198,10 @@ Adjust endpoints to reflect actual routes used by the backend.
 - Backup / Export: the app should provide export to CSV / JSON for portability and backup.
 
 ## Testing
-Swift:
-- Run unit/UI tests in Xcode (Cmd+U) or with xcodebuild:
+Swift (iOS):
+- Run unit/UI tests in Xcode with **Cmd+U**, or from the command line:
 ```bash
-xcodebuild test -scheme RuckingTracker -destination 'platform=macOS'
+xcodebuild test -scheme RuckingTracker -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
 Backend (JS):

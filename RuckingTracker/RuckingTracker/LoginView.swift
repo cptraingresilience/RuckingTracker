@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
+    @State private var showSignUp = false
 
     var body: some View {
         VStack(spacing: 26) {
@@ -19,7 +20,7 @@ struct LoginView: View {
                 .bold()
                 .padding(.bottom, 12)
 
-            TextField("Username or Email", text: $viewModel.username)
+            TextField("Email", text: $viewModel.username)
                 .padding()
                 .background(Color.blue.opacity(0.12))
                 .cornerRadius(10)
@@ -76,10 +77,23 @@ struct LoginView: View {
                     .foregroundColor(.red)
                     .padding(.top, 8)
             }
+
+            Button(action: { showSignUp = true }) {
+                Text("Don't have an account? ")
+                    .foregroundColor(.primary)
+                + Text("Create one")
+                    .foregroundColor(.blue)
+            }
+            .font(.subheadline)
+            .padding(.top, 4)
+
             Spacer()
         }
         .fullScreenCover(isPresented: $viewModel.isLoggedIn) {
             TabViewMain()
+        }
+        .sheet(isPresented: $showSignUp) {
+            SignUpView()
         }
     }
 }
@@ -96,4 +110,3 @@ struct GoogleSignInView: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
-
