@@ -16,10 +16,14 @@
 		</dict>
 		<dict/>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Rux uses your location while you are tracking a ruck to record your route, distance, and pace. Location is only read while a ruck is in progress.</string>
 </dict>
 </plist>
