@@ -26,14 +26,19 @@ jobs:
       - name: Select an available iOS Simulator
         id: simulator
         run: |
-          echo "id=$(xcrun simctl list devices available -j | python3 -c 'import json, sys; devices = json.load(sys.stdin)["devices"]; print(next(device["udid"] for runtime in devices.values() for device in runtime if device["isAvailable"] and device["name"].startswith("iPhone")))' )" >> "$GITHUB_OUTPUT"
+          SIMULATOR_NAME=$(xcrun simctl list devices available -j | python3 -c 'import json, sys; devices=json.load(sys.stdin)["devices"]; name = next((device["name"] for runtime in devices.values() for device in runtime if device.get("isAvailable") and device.get("name", "").startswith("iPhone")), None); print(name or "")')
+          if [ -z "$SIMULATOR_NAME" ]; then
+            echo "No available iPhone simulator found" >&2
+            exit 1
+          fi
+          echo "name=${SIMULATOR_NAME}" >> "$GITHUB_OUTPUT"
       - name: Test
         run: |
           set -o pipefail
           xcodebuild test \
             -project RuckingTracker/RuckingTracker.xcodeproj \
             -scheme RuckingTracker \
-            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}" \
+            -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.name }},OS=latest" \
             | tee xcodebuild-test.log
       - name: Upload test log
         if: always()
