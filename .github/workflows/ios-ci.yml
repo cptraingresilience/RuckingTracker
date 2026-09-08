@@ -23,17 +23,13 @@ jobs:
         run: brew install swiftlint
       - name: Lint
         run: swiftlint lint --strict
-      - name: Select an available iOS Simulator
-        id: simulator
-        run: |
-          echo "id=$(xcrun simctl list devices available -j | python3 -c 'import json, sys; devices = json.load(sys.stdin)["devices"]; print(next(device["udid"] for runtime in devices.values() for device in runtime if device["isAvailable"] and device["name"].startswith("iPhone")))' )" >> "$GITHUB_OUTPUT"
       - name: Test
         run: |
           set -o pipefail
           xcodebuild test \
             -project RuckingTracker/RuckingTracker.xcodeproj \
             -scheme RuckingTracker \
-            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.id }}" \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro,OS=latest" \
             | tee xcodebuild-test.log
       - name: Upload test log
         if: always()
