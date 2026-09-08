@@ -15,8 +15,8 @@ App Store Connect. Copy this list into the release issue for each submission.
 - [ ] `BackendBaseURL` in `Info.plist` points at the **production HTTPS** backend, not
       `http://localhost:3000/api`. A cleartext localhost URL in a shipping build is an App
       Review rejection risk and leaves the app non-functional for users.
-- [ ] `NSAppTransportSecurity → NSAllowsLocalNetworking` removed for the release build unless
-      local-network access is still required (it is only needed for development against a Mac).
+- [ ] `NSAppTransportSecurity` cleartext exceptions are limited to loopback hosts only (or
+      removed entirely) for release builds.
 - [ ] `docs/app-store/app-privacy-disclosures.md` re-verified against `AnalyticsService.swift`,
       `APIClient.swift`, `AuthService.swift`, `LocationManager.swift`.
 - [ ] `docs/PRIVACY.md` "last updated" date refreshed if data handling changed.

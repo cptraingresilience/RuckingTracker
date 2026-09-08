@@ -68,7 +68,7 @@ iOS App (SwiftUI)
 
 2. Backend dependencies (if the backend is in a `backend/` or `Server/` subfolder)
    ```bash
-   cd backend
+   cd rux-backend
    npm install
    # or
    yarn install
@@ -101,7 +101,7 @@ Notes:
 The backend is optional. Start it if you want account creation / activity sync over the network.
 
 ```bash
-cd backend
+cd rux-backend
 npm install
 npm run dev      # development
 # or
@@ -113,7 +113,8 @@ Create a `.env` file in the `backend/` folder:
 PORT=3000
 DB_PATH=./data/rucks.db
 NODE_ENV=development
-AUTH_SECRET=replace-with-secret
+JWT_SECRET=replace-with-strong-random-access-secret
+JWT_REFRESH_SECRET=replace-with-strong-random-refresh-secret
 ```
 
 Verify the backend is reachable at `http://localhost:3000` (or your configured port/IP).
@@ -159,7 +160,7 @@ The app stores the access token received from sign-in/sign-up in the iOS Keychai
 
 ## Configuration
 - **Backend base URL**: set `BackendBaseURL` in `RuckingTracker/RuckingTracker/Info.plist`, or override at runtime with `UserDefaults` key `rt_backend_url`
-- **Backend `.env`**: `PORT`, `DB_PATH`, `AUTH_SECRET` (see Running the Local Backend above)
+- **Backend `.env`**: `PORT`, `JWT_SECRET`, `JWT_REFRESH_SECRET` (see `rux-backend/.env.example`)
 
 ## API Reference (local backend)
 
@@ -209,7 +210,7 @@ xcodebuild test -scheme RuckingTracker -destination 'platform=iOS Simulator,name
 Backend (JS):
 - Run tests:
 ```bash
-cd backend
+cd rux-backend
 npm test
 ```
 
@@ -240,6 +241,8 @@ Submission artifacts live in [`docs/app-store/`](docs/app-store/):
 - [`submission-checklist.md`](docs/app-store/submission-checklist.md) — the end-to-end submission runbook plus the known blockers to clear before the first submission.
 
 User-facing compliance pages: [privacy policy](docs/PRIVACY.md) (App Store *Privacy Policy URL*) and [support](docs/SUPPORT.md) (App Store *Support URL*).
+
+Security remediation evidence for Issue #3 (secrets, ATS/HTTPS, keychain, validation, dependency scan, logging, Firebase hardening) is tracked in [docs/security-remediation.md](docs/security-remediation.md).
 
 The app requests **When In Use** location only, and `NSLocationWhenInUseUsageDescription` in `RuckingTracker/RuckingTracker/Info.plist` explains that it is read only while a ruck is being tracked. Update the privacy docs whenever `LocationManager`, `AnalyticsService`, `AuthService`, or `APIClient` change what data is collected or sent.
 

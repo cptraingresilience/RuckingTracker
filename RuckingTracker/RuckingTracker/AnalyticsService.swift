@@ -16,7 +16,7 @@ class AnalyticsService {
     /// Logs a simple event with optional parameters.
     func logEvent(_ name: String, parameters: [String: Any]? = nil) {
         #if DEBUG
-        print("Analytics Debug - Event: \(name), Parameters: \(parameters ?? [:])")
+        print("Analytics Debug - Event: \(name)")
         #endif
         Analytics.logEvent(name, parameters: parameters)
     }
@@ -44,4 +44,3 @@ class AnalyticsService {
         ])
     }
 }
-

@@ -3,13 +3,30 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { getAuthSecrets } = require('./utils/authConfig');
 
 const app = express();
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+getAuthSecrets();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({ 
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*'
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('CORS origin blocked'));
+    }
 }));
 
 // Body parsing

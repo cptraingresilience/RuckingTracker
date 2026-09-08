@@ -112,6 +112,11 @@ class APIClient {
         self.accessToken = loadStoredToken()
     }
 
+    private func isLoopbackHost(_ host: String?) -> Bool {
+        guard let host else { return false }
+        return host == "localhost" || host == "127.0.0.1"
+    }
+
     var hasAccessToken: Bool {
         accessToken?.isEmpty == false
     }
@@ -194,12 +199,6 @@ class APIClient {
             return keychainToken
         }
 
-        if let legacyToken = UserDefaults.standard.string(forKey: "rt_access_token") {
-            storeTokenInKeychain(legacyToken)
-            UserDefaults.standard.removeObject(forKey: "rt_access_token")
-            return legacyToken
-        }
-
         return nil
     }
 
@@ -272,6 +271,9 @@ class APIClient {
         requiresAuth: Bool = false
     ) async throws -> T {
         guard let url = URL(string: url) else { throw APIError.invalidURL }
+        let isHTTPS = url.scheme?.lowercased() == "https"
+        let isLocalHTTP = url.scheme?.lowercased() == "http" && isLoopbackHost(url.host)
+        guard isHTTPS || isLocalHTTP else { throw APIError.invalidURL }
 
         var request = URLRequest(url: url)
         request.httpMethod = method

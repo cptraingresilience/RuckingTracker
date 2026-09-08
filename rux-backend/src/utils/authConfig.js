@@ -1,25 +1,20 @@
-const devFallbackSecret = 'rucking-tracker-dev-secret';
-
 const resolveSecret = (primaryKey, legacyKey) => {
     const configuredSecret = process.env[primaryKey] || process.env[legacyKey];
 
-    if (configuredSecret) {
-        return configuredSecret;
+    if (typeof configuredSecret === 'string' && configuredSecret.trim().length > 0) {
+        return configuredSecret.trim();
     }
 
-    if (process.env.NODE_ENV === 'production') {
-        throw new Error(`Missing required auth secret: ${primaryKey}`);
-    }
-
-    return devFallbackSecret;
+    throw new Error(`Missing required auth secret: ${primaryKey}`);
 };
 
 const getAuthSecrets = () => {
     const accessSecret = resolveSecret('JWT_SECRET', 'AUTH_SECRET');
-    const refreshSecret =
-        process.env.JWT_REFRESH_SECRET ||
-        process.env.AUTH_REFRESH_SECRET ||
-        `${accessSecret}-refresh`;
+    const refreshSecret = resolveSecret('JWT_REFRESH_SECRET', 'AUTH_REFRESH_SECRET');
+
+    if (accessSecret === refreshSecret) {
+        throw new Error('JWT_REFRESH_SECRET must be different from JWT_SECRET');
+    }
 
     return { accessSecret, refreshSecret };
 };

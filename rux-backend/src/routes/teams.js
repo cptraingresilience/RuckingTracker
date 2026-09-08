@@ -1,8 +1,14 @@
 const express = require('express');
+const Joi = require('joi');
 const { randomUUID } = require('crypto');
 const { authenticateToken } = require('../middleware/auth');
 const { readCollection, updateCollection } = require('../data/store');
+const { validateInput } = require('../utils/validation');
 const router = express.Router();
+
+const createTeamSchema = Joi.object({
+    name: Joi.string().trim().min(1).max(100).required()
+}).required();
 
 router.get('/', async (req, res) => {
     try {
@@ -15,11 +21,11 @@ router.get('/', async (req, res) => {
 
 // Create Team
 router.post('/', authenticateToken, async (req, res) => {
-    const { name } = req.body;
-    
-    if (!name) {
-        return res.status(400).json({ error: 'Team name required' });
+    const validated = validateInput(createTeamSchema, req.body);
+    if (validated.error) {
+        return res.status(400).json({ error: validated.error });
     }
+    const { name } = validated.value;
 
     try {
         const team = {

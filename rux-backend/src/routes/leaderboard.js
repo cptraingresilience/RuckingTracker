@@ -1,6 +1,12 @@
 const express = require('express');
+const Joi = require('joi');
 const router = express.Router();
 const { readCollection } = require('../data/store');
+const { validateInput } = require('../utils/validation');
+
+const leaderboardQuerySchema = Joi.object({
+    period: Joi.string().valid('weekly', 'monthly', 'all').default('weekly')
+});
 
 const filterActivitiesForPeriod = (activities, period) => {
     if (period === 'all') {
@@ -20,7 +26,11 @@ const filterActivitiesForPeriod = (activities, period) => {
 };
 
 router.get('/', async (req, res) => {
-    const { period = 'weekly' } = req.query;
+    const validated = validateInput(leaderboardQuerySchema, req.query);
+    if (validated.error) {
+        return res.status(400).json({ error: validated.error });
+    }
+    const { period } = validated.value;
 
     try {
         const [activities, users] = await Promise.all([

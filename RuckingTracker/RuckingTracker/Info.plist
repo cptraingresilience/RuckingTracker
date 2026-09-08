@@ -20,9 +20,22 @@
 	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs to connect to your local backend to sync ruck tracking data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Rux uses your location while you are tracking a ruck to record your route, distance, and pace. Location is only read while a ruck is in progress.</string>
 </dict>

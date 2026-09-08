@@ -1,10 +1,27 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Joi = require('joi');
 const { randomUUID } = require('crypto');
 const router = express.Router();
 const { readCollection, updateCollection } = require('../data/store');
 const { getAuthSecrets } = require('../utils/authConfig');
+const { validateInput } = require('../utils/validation');
+
+const signupSchema = Joi.object({
+    email: Joi.string().trim().email({ tlds: { allow: false } }).max(254).required(),
+    password: Joi.string().min(8).max(128).required(),
+    username: Joi.string().trim().min(1).max(50).required()
+}).required();
+
+const signinSchema = Joi.object({
+    email: Joi.string().trim().email({ tlds: { allow: false } }).max(254).required(),
+    password: Joi.string().min(8).max(128).required()
+}).required();
+
+const refreshSchema = Joi.object({
+    refreshToken: Joi.string().trim().min(20).required()
+}).required();
 
 const generateTokens = (userId, email) => {
     const { accessSecret, refreshSecret } = getAuthSecrets();
@@ -25,11 +42,11 @@ const normalizeEmail = (email) => email.trim().toLowerCase();
 
 // Sign Up
 router.post('/signup', async (req, res) => {
-    const { email, password, username } = req.body;
-    
-    if (!email || !password || !username) {
-        return res.status(400).json({ error: 'Missing required fields' });
+    const validated = validateInput(signupSchema, req.body);
+    if (validated.error) {
+        return res.status(400).json({ error: validated.error });
     }
+    const { email, password, username } = validated.value;
 
     try {
         const normalizedEmail = normalizeEmail(email);
@@ -78,11 +95,11 @@ router.post('/signup', async (req, res) => {
 
 // Sign In
 router.post('/signin', async (req, res) => {
-    const { email, password } = req.body;
-    
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password required' });
+    const validated = validateInput(signinSchema, req.body);
+    if (validated.error) {
+        return res.status(400).json({ error: validated.error });
     }
+    const { email, password } = validated.value;
 
     try {
         const users = await readCollection('users');
@@ -117,11 +134,11 @@ router.post('/signin', async (req, res) => {
 
 // Refresh Token
 router.post('/refresh', (req, res) => {
-    const { refreshToken } = req.body;
-    
-    if (!refreshToken) {
-        return res.status(400).json({ error: 'Refresh token required' });
+    const validated = validateInput(refreshSchema, req.body);
+    if (validated.error) {
+        return res.status(400).json({ error: validated.error });
     }
+    const { refreshToken } = validated.value;
     
     try {
         const { refreshSecret } = getAuthSecrets();

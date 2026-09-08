@@ -2,8 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>This app needs to connect to your local backend to sync ruck tracking data.</string>
 	<key>CLIENT_ID</key>
 	<string>451848690353-578ggda8u8crtrgio1iblr9r5uo49h1k.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
@@ -33,13 +31,6 @@
 	<key>GOOGLE_APP_ID</key>
 	<string>1:451848690353:ios:f5a11a33248c65797ce090</string>
 	<key>CFBundleIdentifier</key>
-	<string></string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
-	<key></key>
 	<string></string>
 </dict>
 </plist>
