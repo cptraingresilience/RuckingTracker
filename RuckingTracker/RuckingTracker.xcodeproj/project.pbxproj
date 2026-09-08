@@ -36,9 +36,22 @@
 		50F3E1092FCCAF8200868C02 /* RuckingTrackerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RuckingTrackerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		50FA8F6A2FD5F7540044C0F5 /* Exceptions for "RuckingTracker" folder in "RuckingTracker" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 50F3E0F12FCCAF7E00868C02 /* RuckingTracker */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		50F3E0F42FCCAF7E00868C02 /* RuckingTracker */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				50FA8F6A2FD5F7540044C0F5 /* Exceptions for "RuckingTracker" folder in "RuckingTracker" target */,
+			);
 			path = RuckingTracker;
 			sourceTree = "<group>";
 		};
