@@ -4,21 +4,36 @@ const jwt = require('jsonwebtoken');
 const { randomUUID } = require('crypto');
 const router = express.Router();
 const { readCollection, updateCollection } = require('../data/store');
-const { getAuthSecrets } = require('../utils/authConfig');
+const {
+    getAuthSecrets,
+    jwtOptions,
+    jwtVerificationOptions
+} = require('../utils/authConfig');
 
 const generateTokens = (userId, email) => {
     const { accessSecret, refreshSecret } = getAuthSecrets();
     const accessToken = jwt.sign(
-        { userId, email },
+        { userId, email, tokenType: 'access' },
         accessSecret,
-        { expiresIn: '15m' }
+        { ...jwtOptions, expiresIn: '15m' }
     );
     const refreshToken = jwt.sign(
-        { userId, email },
+        { userId, email, tokenType: 'refresh' },
         refreshSecret,
-        { expiresIn: '7d' }
+        { ...jwtOptions, expiresIn: '7d' }
     );
     return { accessToken, refreshToken };
+};
+
+const verifyRefreshToken = (refreshToken) => {
+    const { refreshSecret } = getAuthSecrets();
+    const decoded = jwt.verify(refreshToken, refreshSecret, jwtVerificationOptions);
+
+    if (decoded.tokenType !== 'refresh') {
+        throw new Error('Invalid refresh token type');
+    }
+
+    return decoded;
 };
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
@@ -124,8 +139,7 @@ router.post('/refresh', (req, res) => {
     }
     
     try {
-        const { refreshSecret } = getAuthSecrets();
-        const decoded = jwt.verify(refreshToken, refreshSecret);
+        const decoded = verifyRefreshToken(refreshToken);
         const { accessToken, refreshToken: newRefresh } = generateTokens(decoded.userId, decoded.email);
         res.json({ accessToken, refreshToken: newRefresh });
     } catch (err) {
@@ -134,3 +148,5 @@ router.post('/refresh', (req, res) => {
 });
 
 module.exports = router;
+module.exports.generateTokens = generateTokens;
+module.exports.verifyRefreshToken = verifyRefreshToken;
