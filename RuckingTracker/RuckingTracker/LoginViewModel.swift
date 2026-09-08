@@ -91,8 +91,8 @@ class LoginViewModel: ObservableObject {
     // MARK: - Error Formatting
     private static func errorDescription(_ error: Error) -> String {
         switch error {
-        case is AuthError:
-            switch error as! AuthError {
+        case let authError as AuthError:
+            switch authError {
             case .missingClientID:
                 return "Missing Firebase client ID."
             case .unknown:
