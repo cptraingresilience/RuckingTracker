@@ -20,6 +20,7 @@ A native **iOS app** for tracking rucks (weighted walks / ruck marches), built w
 - [Testing](#testing)
 - [CI / Linting](#ci--linting)
 - [Release pipeline](#release-pipeline)
+- [App Store compliance](#app-store-compliance)
 - [Contributing](#contributing)
 - [Troubleshooting](#troubleshooting)
 - [Roadmap](#roadmap)
@@ -229,6 +230,18 @@ xcodebuild test -project RuckingTracker/RuckingTracker.xcodeproj -scheme Rucking
 ## Release pipeline
 
 Pushing a `release/**` branch or a version tag matching `v*` (for example, `v1.2.0`) runs **iOS Release Archive**. The workflow archives the Release configuration without code signing and uploads a reproducible `RuckingTracker.xcarchive.zip` plus `xcodebuild-archive.log` as a workflow artifact. Download the artifact from the branch or tag's workflow run for debugging or a subsequent signed distribution step.
+
+## App Store compliance
+
+Submission artifacts live in [`docs/app-store/`](docs/app-store/):
+
+- [`metadata.md`](docs/app-store/metadata.md) — final name, subtitle, description, keywords, URLs, age rating answers, and the screenshot capture plan.
+- [`app-privacy-disclosures.md`](docs/app-store/app-privacy-disclosures.md) — the App Privacy questionnaire answers, each mapped to the code that produces the behaviour.
+- [`submission-checklist.md`](docs/app-store/submission-checklist.md) — the end-to-end submission runbook plus the known blockers to clear before the first submission.
+
+User-facing compliance pages: [privacy policy](docs/PRIVACY.md) (App Store *Privacy Policy URL*) and [support](docs/SUPPORT.md) (App Store *Support URL*).
+
+The app requests **When In Use** location only, and `NSLocationWhenInUseUsageDescription` in `RuckingTracker/RuckingTracker/Info.plist` explains that it is read only while a ruck is being tracked. Update the privacy docs whenever `LocationManager`, `AnalyticsService`, `AuthService`, or `APIClient` change what data is collected or sent.
 
 ## Contributing
 We welcome contributions. Suggested workflow:
