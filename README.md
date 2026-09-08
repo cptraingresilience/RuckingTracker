@@ -19,6 +19,7 @@ A native **iOS app** for tracking rucks (weighted walks / ruck marches), built w
 - [Data & Persistence](#data--persistence)
 - [Testing](#testing)
 - [CI / Linting](#ci--linting)
+- [Release pipeline](#release-pipeline)
 - [Contributing](#contributing)
 - [Troubleshooting](#troubleshooting)
 - [Roadmap](#roadmap)
@@ -214,13 +215,20 @@ npm test
 Add CI steps that run both Swift tests and backend tests.
 
 ## CI / Linting
-- Swift linting: SwiftLint (recommended). Add a `.swiftlint.yml` and run in CI.
-- JS linting: ESLint / Prettier for consistent JavaScript style.
-- Add a GitHub Actions workflow to:
-  - Build Swift project
-  - Run Swift tests
-  - Lint and test backend
-  - Optionally, build release artifacts
+- Pull requests targeting `main` and pushes to `main` run the **iOS CI / iOS quality** check. It installs SwiftLint, lints the Swift sources, and runs the `RuckingTracker` Xcode test scheme on an available iOS Simulator.
+- The test log is uploaded as the `xcodebuild-test-log` artifact, including when the job fails.
+- Repository administrators must make **iOS CI / iOS quality** a required status check in the `main` branch protection rule. This is what prevents merging a pull request until the quality gate passes.
+
+Run the same checks locally:
+```bash
+brew install swiftlint
+swiftlint lint --strict
+xcodebuild test -project RuckingTracker/RuckingTracker.xcodeproj -scheme RuckingTracker -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+
+## Release pipeline
+
+Pushing a `release/**` branch or a version tag matching `v*` (for example, `v1.2.0`) runs **iOS Release Archive**. The workflow archives the Release configuration without code signing and uploads a reproducible `RuckingTracker.xcarchive.zip` plus `xcodebuild-archive.log` as a workflow artifact. Download the artifact from the branch or tag's workflow run for debugging or a subsequent signed distribution step.
 
 ## Contributing
 We welcome contributions. Suggested workflow:
