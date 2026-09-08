@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { getAuthSecrets } = require('../utils/authConfig');
+const { getAuthSecrets, jwtVerificationOptions } = require('../utils/authConfig');
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -11,7 +11,10 @@ const authenticateToken = (req, res, next) => {
     
     try {
         const { accessSecret } = getAuthSecrets();
-        const decoded = jwt.verify(token, accessSecret);
+        const decoded = jwt.verify(token, accessSecret, jwtVerificationOptions);
+        if (decoded.tokenType !== 'access') {
+            throw new Error('Invalid access token type');
+        }
         req.user = decoded;
         next();
     } catch (err) {

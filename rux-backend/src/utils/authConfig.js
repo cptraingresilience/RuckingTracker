@@ -1,4 +1,14 @@
 const devFallbackSecret = 'rucking-tracker-dev-secret';
+const jwtOptions = {
+    algorithm: 'HS256',
+    issuer: 'rucking-tracker',
+    audience: 'rucking-tracker-api'
+};
+const jwtVerificationOptions = {
+    algorithms: [jwtOptions.algorithm],
+    issuer: jwtOptions.issuer,
+    audience: jwtOptions.audience
+};
 
 const resolveSecret = (primaryKey, legacyKey) => {
     const configuredSecret = process.env[primaryKey] || process.env[legacyKey];
@@ -24,4 +34,4 @@ const getAuthSecrets = () => {
     return { accessSecret, refreshSecret };
 };
 
-module.exports = { getAuthSecrets };
+module.exports = { getAuthSecrets, jwtOptions, jwtVerificationOptions };
