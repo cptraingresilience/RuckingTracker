@@ -54,7 +54,7 @@ iOS App (SwiftUI)
 
 ## Requirements
 - macOS with Xcode 16+ (required for `PBXFileSystemSynchronizedRootGroup` support)
-- iOS 15+ deployment target
+- iOS 18.6+ deployment target
 - Node.js 18+ (required for local authenticated testing against `rux-backend/`)
 - Firebase project configured (see `GoogleService-Info.plist`)
 
@@ -249,7 +249,7 @@ Submission artifacts live in [`docs/app-store/`](docs/app-store/):
 
 User-facing compliance pages: [privacy policy](docs/PRIVACY.md) (App Store *Privacy Policy URL*) and [support](docs/SUPPORT.md) (App Store *Support URL*).
 
-The app requests **When In Use** location only, and `NSLocationWhenInUseUsageDescription` in `RuckingTracker/RuckingTracker/Info.plist` explains that it is read only while a ruck is being tracked. Update the privacy docs whenever `LocationManager`, `AnalyticsService`, `AuthService`, or `APIClient` change what data is collected or sent.
+The app requests **When In Use** location only, and `NSLocationWhenInUseUsageDescription` in `RuckingTracker/RuckingTracker/Info.plist` explains that location is used only during an active ruck while the app stays open and the iPhone remains unlocked. Update the privacy docs whenever `LocationManager`, `AnalyticsService`, `AuthService`, or `APIClient` change what data is collected or sent.
 
 ## Contributing
 We welcome contributions. Suggested workflow:

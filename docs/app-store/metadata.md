@@ -15,7 +15,7 @@ Final copy for the App Store Connect listing. Values are ready to paste; anythin
 | Primary category | Health & Fitness |
 | Secondary category | Sports |
 | Marketing version | `MARKETING_VERSION` in the Xcode project (currently `1.0`) |
-| Minimum iOS version | iOS 15.0 |
+| Minimum iOS version | iOS 18.6 |
 | Price | Free |
 | Availability | All territories |
 
