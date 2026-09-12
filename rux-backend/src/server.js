@@ -5,12 +5,32 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : [];
+
+if (isProduction && allowedOrigins.length === 0) {
+    throw new Error('Missing required CORS config: ALLOWED_ORIGINS');
+}
+
+const corsOptions = {
+    origin(origin, callback) {
+        if (!origin || !isProduction) {
+            return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error('Origin not allowed by CORS'));
+    }
+};
 
 // Security middleware
 app.use(helmet());
-app.use(cors({ 
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*'
-}));
+app.use(cors(corsOptions));
 
 // Body parsing
 app.use(express.json({ limit: '50mb' }));

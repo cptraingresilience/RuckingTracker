@@ -10,6 +10,7 @@ import CoreLocation
 
 struct MapView: View {
     @StateObject private var viewModel = MapViewModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 20) {
@@ -30,17 +31,20 @@ struct MapView: View {
             }
             .padding(.vertical, 8)
 
+            if let statusMessage = viewModel.statusMessage {
+                Label(statusMessage, systemImage: "location.fill")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.blue.opacity(0.08))
+                    .cornerRadius(12)
+            }
+
             Spacer()
 
-            if !viewModel.isTracking {
-                Button("Start Ruck") { viewModel.startSession() }
-                    .font(.headline)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.orange)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
-            } else {
+            if viewModel.isTracking {
                 Button("Stop & Save") { viewModel.stopSession() }
                     .font(.headline)
                     .padding()
@@ -48,6 +52,16 @@ struct MapView: View {
                     .background(Color.red)
                     .foregroundColor(.white)
                     .cornerRadius(12)
+            } else {
+                Button(viewModel.isLocationAuthorized ? "Start Ruck" : viewModel.permissionButtonTitle) {
+                    viewModel.startSession()
+                }
+                .font(.headline)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(viewModel.isLocationAuthorized ? Color.orange : Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(12)
             }
 
             if viewModel.showSaveActivity, let activity = viewModel.currentActivity {
@@ -60,7 +74,10 @@ struct MapView: View {
 
         }
         .padding()
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background {
+                viewModel.handleAppMovedToBackground()
+            }
+        }
     }
 }
-
-

@@ -12,13 +12,13 @@ App Store Connect. Copy this list into the release issue for each submission.
 - [ ] `Info.plist` reviewed: `NSLocationWhenInUseUsageDescription` present and accurate,
       `ITSAppUsesNonExemptEncryption` is `false`, `CFBundleURLSchemes` matches the reversed
       client ID in `GoogleService-Info.plist`.
-- [ ] `BackendBaseURL` in `Info.plist` points at the **production HTTPS** backend, not
-      `http://localhost:3000/api`. A cleartext localhost URL in a shipping build is an App
-      Review rejection risk and leaves the app non-functional for users.
-- [ ] `NSAppTransportSecurity → NSAllowsLocalNetworking` removed for the release build unless
-      local-network access is still required (it is only needed for development against a Mac).
+- [ ] `BackendProductionBaseURL` in `Info.plist` points at the **production HTTPS** backend.
+      Release builds must not fall back to localhost or a LAN IP, and the deployed backend must
+      have explicit `ALLOWED_ORIGINS`, `JWT_SECRET`, and `JWT_REFRESH_SECRET` values.
+- [ ] `NSAppTransportSecurity → NSAllowsLocalNetworking` exists only in
+      `Info-Debug.plist`, not the release plist.
 - [ ] `docs/app-store/app-privacy-disclosures.md` re-verified against `AnalyticsService.swift`,
-      `APIClient.swift`, `AuthService.swift`, `LocationManager.swift`.
+      `APIClient.swift`, `AuthService.swift`, `LocationManager.swift`, and `LoginView.swift`.
 - [ ] `docs/PRIVACY.md` "last updated" date refreshed if data handling changed.
 
 ## 2. Account and capabilities (App Store Connect / Developer portal)
@@ -26,8 +26,7 @@ App Store Connect. Copy this list into the release issue for each submission.
 - [ ] Apple Developer Program membership active; agreements, tax, and banking sections show
       no outstanding actions.
 - [ ] App record exists with bundle ID `Com.Rux.Rux`.
-- [ ] **Sign in with Apple** capability enabled for the App ID and in the Xcode target — it is
-      mandatory because the app offers Google sign-in.
+- [ ] **Sign in with Apple** capability enabled only if social sign-in is re-enabled in the app.
 - [ ] Push Notifications capability enabled **only if** remote notifications actually ship
       (the Settings toggle today is a local preference only).
 - [ ] Distribution certificate and App Store provisioning profile valid.
@@ -56,8 +55,8 @@ xcodebuild -project RuckingTracker/RuckingTracker.xcodeproj \
       window: `docs/SUPPORT.md` and `docs/PRIVACY.md`.
 - [ ] Screenshots uploaded for every required display size, captured per
       [metadata.md](metadata.md), free of real user data.
-- [ ] App icon present at every required size in `Assets.xcassets/AppIcon.appiconset`,
-      including 1024×1024, with no alpha channel and no transparency.
+- [ ] App icon source asset present in `Assets.xcassets/AppIcon.appiconset` as the 1024×1024
+      App Store master icon, and exported with **no alpha channel / transparency**.
 - [ ] "What's New" text entered.
 - [ ] Copyright and contact details completed.
 
@@ -74,15 +73,18 @@ xcodebuild -project RuckingTracker/RuckingTracker.xcodeproj \
 
 ## 6. Functional review pass on a real device
 
-- [ ] Fresh install: location prompt appears with the expected wording, and denying it still
-      allows manual ruck logging without a crash.
+- [ ] Fresh install with a reachable production backend: sign-up/sign-in works, the location
+      prompt appears with the expected foreground-only wording, and denying it still allows
+      manual ruck logging without a crash.
 - [ ] Start/stop a GPS ruck; route, distance, duration, and pace are recorded and saved.
 - [ ] Create, edit, and delete a ruck from the Log tab.
-- [ ] Sign up, sign out, sign in with email; Google sign-in; Sign in with Apple.
+- [ ] Sign up, sign out, sign in with email, and verify expired access tokens refresh correctly.
 - [ ] Account deletion path documented in `docs/SUPPORT.md` is reachable and honoured (Apple
       requires account deletion for apps that create accounts).
-- [ ] App behaves gracefully with the backend unreachable and in Airplane Mode.
-- [ ] Team and Profile tabs render without placeholder or debug text.
+- [ ] App behaves gracefully with the backend unreachable and in Airplane Mode **after at least
+      one successful sign-in**; a brand-new install is still backend-dependent because the app
+      launches to the login screen.
+- [ ] Team, Profile, and Settings tabs render without placeholder, dummy, or debug text.
 
 ## 7. Reviewer information
 
@@ -98,10 +100,18 @@ xcodebuild -project RuckingTracker/RuckingTracker.xcodeproj \
 
 ## Known blockers to resolve before the first submission
 
-1. `BackendBaseURL` defaults to `http://localhost:3000/api`; a production HTTPS endpoint must
-   be configured or backend-dependent features will fail review.
+1. `BackendProductionBaseURL` is intentionally blank until the production HTTPS API exists; set
+   it before submission or backend-dependent features will fail review. The production backend
+   deployment also still needs explicit `ALLOWED_ORIGINS`, `JWT_SECRET`, and
+   `JWT_REFRESH_SECRET` values.
 2. In-app account deletion is not implemented; the request-based flow in `docs/SUPPORT.md` is
    the interim answer, and an in-app path should be added to fully satisfy Guideline 5.1.1(v).
-3. Sign in with Apple must be enabled as a capability for the shipping build because Google
-   sign-in is offered (Guideline 4.8).
+3. Social sign-in is currently disabled; if Google or Apple sign-in is re-enabled, add backend
+   token exchange support before shipping it.
 4. A demo account for App Review does not yet exist.
+5. `ProfileView.swift` still renders hard-coded dummy profile content, and `SettingsView.swift`
+   still contains placeholder account/support rows; replace or hide that content before
+   submission screenshots or App Review.
+6. `Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` is currently encoded as RGBA. Export an
+   opaque no-alpha App Store icon before upload, even though the single-size asset catalog entry
+   itself is present.

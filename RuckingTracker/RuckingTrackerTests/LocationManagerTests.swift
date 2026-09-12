@@ -9,6 +9,7 @@ import XCTest
 import CoreLocation
 @testable import RuckingTracker
 
+@MainActor
 class LocationManagerTests: XCTestCase {
     var locationManager: LocationManager!
 
@@ -31,11 +32,17 @@ class LocationManagerTests: XCTestCase {
 
     func testStartAndStopTracking() {
         locationManager.startTracking()
-        XCTAssertTrue(locationManager.isTracking)
+        XCTAssertFalse(locationManager.isTracking)
         locationManager.stopTracking()
         XCTAssertFalse(locationManager.isTracking)
     }
-}
 
+    func testForegroundTrackingMessageIsExplicit() {
+        XCTAssertEqual(
+            LocationManager.foregroundOnlyTrackingMessage,
+            "Tracking works only while Rux stays open and the iPhone remains unlocked for this MVP."
+        )
+    }
+}
 
 

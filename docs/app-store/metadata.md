@@ -15,7 +15,7 @@ Final copy for the App Store Connect listing. Values are ready to paste; anythin
 | Primary category | Health & Fitness |
 | Secondary category | Sports |
 | Marketing version | `MARKETING_VERSION` in the Xcode project (currently `1.0`) |
-| Minimum iOS version | iOS 15.0 |
+| Minimum iOS version | iOS 18.6 |
 | Price | Free |
 | Availability | All territories |
 
@@ -43,11 +43,11 @@ Final copy for the App Store Connect listing. Values are ready to paste; anythin
 > • Stats dashboard: total miles, total time, average pace, and best distance
 > • Team leaderboard to see how your group is stacking up
 > • Imperial or metric units, dark mode, and notification preferences
-> • Optional account sync so your rucks are available after you sign in
+> • Email account sign-in with backend-backed sync for saved rucks
 >
 > YOUR DATA
-> Rucks are stored on your device. If you create an account, your rucks and profile details
-> can also be synced to the Rux service so they are not lost when you change devices.
+> Rucks are stored on your device and, after you sign in, synced to the Rux service so they are
+> available to your account across devices.
 > Location data is used to record the route of the ruck you are tracking; it is not sold and
 > is not used for advertising.
 >
@@ -96,7 +96,7 @@ Resulting rating: **4+**.
 | Contains ads | No |
 | In-app purchases | No |
 | Third-party analytics | Yes (Firebase Analytics) |
-| Sign in with Apple offered | Yes (required because Google sign-in is offered) |
+| Sign in with Apple offered | No (social sign-in is disabled until backend token exchange exists) |
 
 ## Screenshots
 
@@ -108,8 +108,8 @@ Required sizes (App Store Connect accepts these and scales down for smaller devi
 | 6.5" | iPhone 11 Pro Max / XS Max | 1242 × 2688 |
 | 13" (only if iPad is supported at submission) | iPad Pro 13" | 2064 × 2752 |
 
-Capture five screenshots, in this order, on the iPhone 16 Pro Max simulator with demo data
-loaded and the status bar cleaned up (`xcrun simctl status_bar <udid> override --time 9:41
+Capture five screenshots, in this order, on the iPhone 16 Pro Max simulator with a seeded demo
+account and the status bar cleaned up (`xcrun simctl status_bar <udid> override --time 9:41
 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3`):
 
 1. **Activity / MapView** mid-ruck, showing the live route and Stop & Save button.
@@ -119,13 +119,24 @@ loaded and the status bar cleaned up (`xcrun simctl status_bar <udid> override -
 5. **SettingsView** showing units, dark mode, and notification toggles.
 
 Rules to respect: no pricing claims, no placeholder/lorem text, and no personal data of real
-users in the captures. App Preview videos are optional and not part of the 1.0 submission.
+users in the captures. App Preview videos are optional and not part of the 1.0 submission. Do
+not capture Profile/Settings until placeholder content has been replaced or removed from the
+shipping build.
 
 ## App Review information
 
 | Field | Value |
 |-------|-------|
 | Sign-in required | Yes |
-| Demo account | **TODO (account owner)** — create a permanent demo account in Firebase Auth and enter the email/password here |
+| Demo account | **TODO (account owner)** — create a permanent demo account in the Rux backend and enter the email/password here |
 | Contact | **TODO (account owner)** — first name, last name, phone, email |
-| Notes to reviewer | "Rucking is walking or hiking while carrying a weighted pack. Tap the Activity tab and press Start Ruck to begin GPS tracking; allow the location prompt to see the route draw. Rucks can also be added manually from the Log tab with the + button. The team leaderboard is populated with sample data." |
+| Notes to reviewer | "Rucking is walking or hiking while carrying a weighted pack. Sign in with the demo account first, then tap the Activity tab and press Start Ruck to begin GPS tracking; allow the location prompt to see the route draw. Rucks can also be added manually from the Log tab with the + button. The Team tab reads live backend leaderboard data for the seeded demo account." |
+
+## Open release-metadata blockers
+
+- **TODO (account owner):** fill in the App Review demo account and contact details above.
+- **Before screenshots/review:** seed the demo backend account with team membership and enough
+  activity data to populate Log and Team screens.
+- **Before screenshots/review:** replace or hide placeholder Profile/Settings content in the app.
+- **Before upload:** replace `Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png` with an
+  opaque no-alpha export.

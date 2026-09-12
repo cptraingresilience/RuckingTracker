@@ -7,14 +7,15 @@ disclosure can be re-verified whenever data handling changes.
 
 | Behaviour | Source |
 |-----------|--------|
-| Precise location sampled only while a ruck is tracked; **When In Use** authorization only | `RuckingTracker/RuckingTracker/LocationManager.swift` (`requestWhenInUseAuthorization`, `startUpdatingLocation` gated by `isTracking`) |
-| Email, password, username, optional full name sent to the backend for sign-up / sign-in | `RuckingTracker/RuckingTracker/APIClient.swift` (`SignupRequest`, `SigninRequest`, `UserDTO`) |
+| Precise location sampled only while a ruck is tracked; **When In Use** authorization only; tracking stops when the app leaves the foreground | `RuckingTracker/RuckingTracker/LocationManager.swift` (`requestWhenInUseAuthorization`, `startUpdatingLocation` gated by `isTracking`, `stopTrackingBecauseAppLeftForeground`) |
+| Email, password, and username sent to the backend for sign-up / sign-in | `RuckingTracker/RuckingTracker/APIClient.swift` (`SignupRequest`, `SigninRequest`, `UserDTO`) |
 | Access token stored in the Keychain and attached to authenticated requests | `RuckingTracker/RuckingTracker/APIClient.swift` (Keychain helpers) |
-| Email / Google / Apple sign-in via Firebase Auth | `RuckingTracker/RuckingTracker/AuthService.swift` |
-| Analytics events: `screen_view`, `button_tap`, `activity_completed` (with activity id, distance, duration) | `RuckingTracker/RuckingTracker/AnalyticsService.swift` |
+| Google / Apple sign-in is disabled until backend token exchange exists | `RuckingTracker/RuckingTracker/AuthService.swift`, `RuckingTracker/RuckingTracker/LoginView.swift` |
+| The app launches to the login screen; there is no guest mode in the shipping build | `RuckingTracker/RuckingTracker/RuckingTrackerApp.swift`, `RuckingTracker/RuckingTracker/LoginView.swift` |
+| Analytics events: `screen_view`, `button_tap`, `activity_completed` (with activity id, distance, duration); no analytics user ID is set in app code | `RuckingTracker/RuckingTracker/AnalyticsService.swift` |
 | Firebase configured at launch | `RuckingTracker/RuckingTracker/AppDelegate.swift`, `GoogleService-Info.plist` |
 | Ruck sessions persisted locally as JSON | `RuckingTracker/RuckingTracker/ActivityStore.swift` |
-| Ruck summaries synced to the backend when a token exists | `RuckingTracker/RuckingTracker/APIClient.swift` (activities endpoints) |
+| Ruck routes stay on-device; backend sync covers activity summary fields when a token exists | `RuckingTracker/RuckingTracker/ActivityStore.swift`, `RuckingTracker/RuckingTracker/APIClient.swift` (`ActivitySubmissionRequest`) |
 
 No HealthKit, Contacts, Photos, Camera, Microphone, Motion, or advertising SDK usage exists in
 the project; those categories are therefore answered "not collected".
@@ -30,16 +31,16 @@ Question 1 — *Do you or your third-party partners collect data from this app?*
 - Purposes: **App Functionality** (account creation and sign-in)
 
 ### Contact Info → Name
-- Collected: **Yes** (username, optional full name)
+- Collected: **Yes** (username)
 - Linked to the user: **Yes**
 - Used for tracking: **No**
-- Purposes: **App Functionality** (profile display, team leaderboard)
+- Purposes: **App Functionality** (account creation and team leaderboard)
 
 ### Location → Precise Location
 - Collected: **Yes**
 - Linked to the user: **Yes**
 - Used for tracking: **No**
-- Purposes: **App Functionality** (recording the route, distance, and pace of a ruck)
+- Purposes: **App Functionality** (recording the route, distance, and pace of a ruck while the app stays open and unlocked)
 
 ### Health & Fitness → Fitness
 - Collected: **Yes** (distance, duration, pace, pack weight of each ruck)
@@ -55,20 +56,20 @@ Question 1 — *Do you or your third-party partners collect data from this app?*
 - Purposes: **App Functionality**
 
 ### Identifiers → User ID
-- Collected: **Yes** (backend/Firebase account identifier)
+- Collected: **Yes** (backend account identifier)
 - Linked to the user: **Yes**
 - Used for tracking: **No**
-- Purposes: **App Functionality**, **Analytics**
+- Purposes: **App Functionality**
 
 ### Identifiers → Device ID
 - Collected: **Yes** (Firebase Analytics app instance ID)
-- Linked to the user: **Yes**
+- Linked to the user: **No**
 - Used for tracking: **No**
 - Purposes: **Analytics**
 
 ### Usage Data → Product Interaction
 - Collected: **Yes** (screen views and button taps)
-- Linked to the user: **Yes**
+- Linked to the user: **No**
 - Used for tracking: **No**
 - Purposes: **Analytics**
 
@@ -96,8 +97,8 @@ the Firebase console unless the disclosures above are updated.
 
 | Key | Value | Where |
 |-----|-------|-------|
-| `NSLocationWhenInUseUsageDescription` | "Rux uses your location while you are tracking a ruck to record your route, distance, and pace. Location is only read while a ruck is in progress." | `RuckingTracker/RuckingTracker/Info.plist` |
-| `ITSAppUsesNonExemptEncryption` | `false` — the app only uses HTTPS/Keychain via Apple and Google SDKs, which is exempt | `RuckingTracker/RuckingTracker/Info.plist` |
+| `NSLocationWhenInUseUsageDescription` | "Rux uses your location while you are actively tracking a ruck to record route, distance, and pace. For this MVP, tracking only works while the app stays open and the iPhone remains unlocked." | `RuckingTracker/RuckingTracker/Info.plist` |
+| `ITSAppUsesNonExemptEncryption` | `false` — the app only uses exempt system cryptography such as HTTPS and Keychain | `RuckingTracker/RuckingTracker/Info.plist` |
 
 ## Re-verification
 

@@ -16,14 +16,22 @@ struct TeamView: View {
             HeaderView(title: "Team Leaderboard", systemIcon: "person.3.fill")
                 .padding(.bottom, 8)
 
-            if !viewModel.groups.isEmpty {
-                Picker("Select Group", selection: $viewModel.selectedGroup) {
-                    ForEach(viewModel.groups, id: \.self) { group in
-                        Text(group)
-                            .tag(group)
+            if !viewModel.teams.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("Select Team", selection: $viewModel.selectedTeamId) {
+                        ForEach(viewModel.teams) { team in
+                            Text(team.name)
+                                .tag(team.id)
+                        }
+                    }
+                    .pickerStyle(.menu)
+
+                    if !viewModel.selectedTeamSummary.isEmpty {
+                        Text(viewModel.selectedTeamSummary)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
             }
 
@@ -52,8 +60,9 @@ struct TeamView: View {
                     Image(systemName: "person.3.sequence.fill")
                         .font(.system(size: 36))
                         .foregroundColor(.secondary)
-                    Text("No leaderboard data yet")
+                    Text(viewModel.emptyStateMessage)
                         .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 Spacer()
             } else {
@@ -66,5 +75,11 @@ struct TeamView: View {
             }
         }
         .padding()
+        .onChange(of: viewModel.selectedTeamId) { newTeamId in
+            guard !newTeamId.isEmpty else { return }
+            Task {
+                await viewModel.refreshSelectedTeam()
+            }
+        }
     }
 }

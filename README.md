@@ -1,6 +1,6 @@
 # RuckingTracker
 
-A native **iOS app** for tracking rucks (weighted walks / ruck marches), built with SwiftUI. Log sessions, view history, track stats, and optionally sync with a local Node.js backend.
+A native **iOS app** for tracking rucks (weighted walks / ruck marches), built with SwiftUI. Sign in with the Rux backend, log sessions, view history, track stats, and sync account-backed activity data.
 
 ## Table of Contents
 - [Key Features](#key-features)
@@ -37,25 +37,25 @@ A native **iOS app** for tracking rucks (weighted walks / ruck marches), built w
 - **Stats dashboard** — total miles, average pace, total time, and personal best distance.
 - **Team leaderboard** — view group rankings and scores.
 - **Settings** — notifications, dark mode, unit preference (Imperial/Metric).
-- **Optional backend sync** — activities can be submitted to a Node.js REST API (configurable).
+- **Backend-backed account flow** — email sign-up/sign-in, token refresh, team data, and activity sync use the Node.js REST API.
 
 ## Architecture
 - **iOS client**: Swift + SwiftUI — all screens are native SwiftUI views.
 - **Local persistence**: File-based JSON storage via `ActivityStore` (documents directory).
-- **Optional backend**: Node.js REST API (`APIClient.swift`) — used for account creation, sign-in, and optional activity sync. Requires a running backend server.
-- **Firebase Auth**: Used for email/Google sign-in on the device.
+- **Backend API**: Node.js REST API (`APIClient.swift`) — required for sign-up, email sign-in, token refresh, team data, and authenticated activity sync.
+- **Social sign-in**: Google / Apple sign-in is intentionally disabled until the backend supports exchanging social identities for Rux JWTs.
 
 ```
 iOS App (SwiftUI)
   ├── ActivityStore   ← local JSON persistence (source of truth)
-  └── APIClient       ← optional HTTP sync to Node.js backend
-        └── Node.js backend ↔ Database
+  └── APIClient       ← auth, team data, and HTTP sync to Node.js backend
+        └── Node.js backend ↔ JSON data files
 ```
 
 ## Requirements
 - macOS with Xcode 16+ (required for `PBXFileSystemSynchronizedRootGroup` support)
-- iOS 15+ deployment target
-- Node.js 18+ (only required if running the optional local backend)
+- iOS 18.6+ deployment target
+- Node.js 18+ (required for local authenticated testing against `rux-backend/`)
 - Firebase project configured (see `GoogleService-Info.plist`)
 
 ## Installation — Development
@@ -66,12 +66,10 @@ iOS App (SwiftUI)
    cd RuckingTracker
    ```
 
-2. Backend dependencies (if the backend is in a `backend/` or `Server/` subfolder)
+2. Install backend dependencies
    ```bash
-   cd backend
+   cd rux-backend
    npm install
-   # or
-   yarn install
    ```
 
 3. Open the Swift project in Xcode
@@ -94,29 +92,35 @@ Notes:
 2. Select the `RuckingTracker` scheme and an iOS Simulator (or a connected device).
 3. Press **Cmd+R** to build and run.
 
-> The app stores activity data locally on the device (JSON files in the Documents directory). The optional backend is not required to use the core features.
+> The app stores rucks locally on the device (JSON files in the Documents directory), but the current build launches to `LoginView` and requires a reachable backend for sign-up/sign-in before a user can enter the main tabs.
 
 ### Running the Local Backend (JS)
 
-The backend is optional. Start it if you want account creation / activity sync over the network.
+The backend is required for the current authenticated app flow. Start it before trying to sign up, sign in, refresh tokens, or load live team data. Once you are in the app, create/edit/delete rucks still write locally even if later sync attempts fail.
 
 ```bash
-cd backend
+cd rux-backend
 npm install
 npm run dev      # development
 # or
 npm start        # production
 ```
 
-Create a `.env` file in the `backend/` folder:
+Create a `.env` file in the `rux-backend/` folder:
 ```
 PORT=3000
-DB_PATH=./data/rucks.db
-NODE_ENV=development
-AUTH_SECRET=replace-with-secret
+DATA_DIR=./data
+JWT_SECRET=replace-with-local-access-secret
+JWT_REFRESH_SECRET=replace-with-local-refresh-secret
 ```
 
-Verify the backend is reachable at `http://localhost:3000` (or your configured port/IP).
+`npm run dev` forces development mode. `npm start` forces production mode, so use strong,
+different `JWT_SECRET` / `JWT_REFRESH_SECRET` values and an explicit comma-separated
+`ALLOWED_ORIGINS` list before any release deployment. Local development can leave
+`ALLOWED_ORIGINS` unset.
+
+Verify the backend is reachable at `http://127.0.0.1:3000/health` and the API root at
+`http://127.0.0.1:3000/api/health` (simulator) or your configured LAN IP (physical device).
 
 ## iOS App — UI & CRUD Capabilities
 
@@ -126,9 +130,9 @@ Verify the backend is reachable at `http://localhost:3000` (or your configured p
 |-----|--------|-------------|
 | 🗺 Activity | `MapView` | Live GPS ruck tracking — tap Start/Stop to record a session |
 | 📊 Log | `LogView` | Full activity history with stats, add/edit/delete rucks |
-| 👥 Team | `TeamView` | Group leaderboard |
-| 👤 Profile | `ProfileView` | User stats summary |
-| ⚙️ Settings | `SettingsView` | Notifications, dark mode, unit preference |
+| 👥 Team | `TeamView` | Group leaderboard loaded from the backend |
+| 👤 Profile | `ProfileView` | Placeholder profile summary (not yet account-backed) |
+| ⚙️ Settings | `SettingsView` | Notifications, dark mode, unit preference, plus placeholder account/support rows |
 
 ### Supported CRUD Operations
 
@@ -144,36 +148,45 @@ Verify the backend is reachable at `http://localhost:3000` (or your configured p
 
 ### Backend Connection Configuration
 
-The iOS app reads the backend base URL from:
-- `Info.plist` → `BackendBaseURL`
-- or `UserDefaults` → `rt_backend_url` (runtime override)
+The iOS app now uses a release-safe split configuration:
+- **Release builds** → `RuckingTracker/RuckingTracker/Info.plist` → `BackendProductionBaseURL`
+- **Debug simulator builds** → `RuckingTracker/RuckingTracker/Info-Debug.plist` → `BackendSimulatorBaseURL` (defaults to `http://127.0.0.1:3000/api`)
+- **Debug physical-device builds** → `RuckingTracker/RuckingTracker/Info-Debug.plist` → `BackendLocalNetworkBaseURL`
+- **Debug-only runtime override** → `UserDefaults` key `rt_backend_url`
 
-Change this value to match your backend host before building:
-- Local simulator: `http://localhost:3000/api`
-- Device on same network: `http://<your-mac-ip>:3000/api`
+Rules:
+- Release builds require an **HTTPS** production API and will not fall back to localhost or any LAN IP.
+- Physical devices must use your Mac's LAN address (for example `http://192.168.1.20:3000/api`), never `localhost`.
+- Debug builds keep the ATS local-network exception in `Info-Debug.plist`; the release plist does not.
 
 The app stores the access token received from sign-in/sign-up in the iOS Keychain and attaches it automatically to authenticated API requests.
 
-**Local data remains available when the backend is unreachable.** The app still lets you create, edit, and delete rucks locally, then attempts backend sync when an API token is available.
+**Local data remains available when the backend is unreachable after sign-in.** The app still lets you create, edit, and delete rucks locally, then attempts backend sync when an API token is available. A fresh install still needs a reachable backend to complete sign-up/sign-in.
 
 
 ## Configuration
-- **Backend base URL**: set `BackendBaseURL` in `RuckingTracker/RuckingTracker/Info.plist`, or override at runtime with `UserDefaults` key `rt_backend_url`
-- **Backend `.env`**: `PORT`, `DB_PATH`, `AUTH_SECRET` (see Running the Local Backend above)
+- **Backend base URL**: set `BackendProductionBaseURL` for release, `BackendLocalNetworkBaseURL` for on-device debug, or use the debug-only `rt_backend_url` override
+- **Backend `.env`**: `PORT`, `JWT_SECRET`, `JWT_REFRESH_SECRET` (legacy `AUTH_SECRET` / `AUTH_REFRESH_SECRET` still work)
 
 ## API Reference (local backend)
 
-Base URL: `http://<host>:3000/api` (configure `BackendBaseURL` in `Info.plist` or `rt_backend_url` in `UserDefaults`)
+Base URL:
+- Simulator debug: `http://127.0.0.1:3000/api`
+- Device debug: `http://<your-mac-ip>:3000/api`
+- Release: `https://<your-production-host>/api`
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | `/auth/signup` | Create account → returns `accessToken` | No |
-| POST | `/auth/signin` | Sign in → returns `accessToken` | No |
+| POST | `/auth/signup` | Create account → returns `accessToken`, `refreshToken`, `user` | No |
+| POST | `/auth/signin` | Sign in → returns `accessToken`, `refreshToken`, `user` | No |
+| POST | `/auth/refresh` | Exchange a refresh token for a new access/refresh token pair | No |
 | GET | `/activities` | List all activities | Yes |
 | POST | `/activities` | Create a new activity | Yes |
 | PUT | `/activities/:id` | Update an activity | Yes |
 | DELETE | `/activities/:id` | Delete an activity | Yes |
 | GET | `/activities/stats/summary` | Aggregated stats | Yes |
+| GET | `/teams` | List teams for the Team tab picker | No |
+| GET | `/leaderboard?period=weekly|monthly|all` | Load ranked leaderboard entries | No |
 
 **Auth**: include a bearer access token in the `Authorization` header on authenticated routes.
 
@@ -192,7 +205,7 @@ Request body for create/update:
 ```
 
 ## Data & Persistence
-- The client displays and edits ruck sessions. All write operations are performed via the local backend API.
+- The client writes rucks to on-device JSON files via `ActivityStore`; backend writes are a follow-up sync path when the user has valid API tokens.
 - Database options used in similar projects:
   - SQLite (file-based) — good for local desktop persistence.
   - Core Data — native Apple persistence (if used directly in Swift).
@@ -203,21 +216,16 @@ Request body for create/update:
 Swift (iOS):
 - Run unit/UI tests in Xcode with **Cmd+U**, or from the command line:
 ```bash
-xcodebuild test -scheme RuckingTracker -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild test -project RuckingTracker/RuckingTracker.xcodeproj -scheme RuckingTracker -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
 Backend (JS):
-- Run tests:
-```bash
-cd backend
-npm test
-```
-
-Add CI steps that run both Swift tests and backend tests.
+- `rux-backend/package.json` does not ship an automated backend test suite yet; `npm test` is a placeholder script that exits with an error.
 
 ## CI / Linting
 - Pull requests targeting `main` and pushes to `main` run the **iOS CI / iOS quality** check. It installs SwiftLint, lints the Swift sources, and runs the `RuckingTracker` Xcode test scheme on an available iOS Simulator.
 - The test log is uploaded as the `xcodebuild-test-log` artifact, including when the job fails.
+- Release branches (`release/**`) and `v*` tags also run **iOS Release Archive**, which performs an unsigned `xcodebuild archive` and uploads the archive/log artifacts.
 - Repository administrators must make **iOS CI / iOS quality** a required status check in the `main` branch protection rule. This is what prevents merging a pull request until the quality gate passes.
 
 Run the same checks locally:
@@ -241,7 +249,7 @@ Submission artifacts live in [`docs/app-store/`](docs/app-store/):
 
 User-facing compliance pages: [privacy policy](docs/PRIVACY.md) (App Store *Privacy Policy URL*) and [support](docs/SUPPORT.md) (App Store *Support URL*).
 
-The app requests **When In Use** location only, and `NSLocationWhenInUseUsageDescription` in `RuckingTracker/RuckingTracker/Info.plist` explains that it is read only while a ruck is being tracked. Update the privacy docs whenever `LocationManager`, `AnalyticsService`, `AuthService`, or `APIClient` change what data is collected or sent.
+The app requests **When In Use** location only, and `NSLocationWhenInUseUsageDescription` in `RuckingTracker/RuckingTracker/Info.plist` explains that location is used only during an active ruck while the app stays open and the iPhone remains unlocked. Update the privacy docs whenever `LocationManager`, `AnalyticsService`, `AuthService`, or `APIClient` change what data is collected or sent.
 
 ## Contributing
 We welcome contributions. Suggested workflow:
@@ -264,11 +272,11 @@ Code style:
 
 ## Troubleshooting
 - App won't start / backend not reachable:
-  - Ensure backend is running and API URL in app settings points to the correct port.
+  - Ensure backend is running and the build is using the right base URL (`BackendSimulatorBaseURL`, `BackendLocalNetworkBaseURL`, `BackendProductionBaseURL`, or the debug-only `rt_backend_url` override).
   - Check logs in the backend console for errors.
-- Database errors:
-  - Verify DB path is writable.
-  - Backup and remove corrupt DB to allow re-initialization (only if no data loss concerns).
+- Backend data-store errors:
+  - Verify `DATA_DIR` is writable.
+  - Inspect `rux-backend/data/*.json` (or your configured data directory) for corrupt JSON and restore from backup if needed.
 - Build fails in Xcode:
   - Verify correct Xcode version and toolchain.
   - Clean build folder: Product → Clean Build Folder, or `xcodebuild clean`.
