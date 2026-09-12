@@ -51,26 +51,11 @@ struct LoginView: View {
 
             Divider().padding(.horizontal)
 
-            // Changed: No longer using a sheet.
-            // Just call the function directly.
-            Button(action: {
-                // Get the root view controller from the window
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let rootVC = windowScene.windows.first?.rootViewController {
-                    viewModel.loginWithGoogle(presenting: rootVC)
-                }
-            }) {
-                HStack {
-                    Image(systemName: "globe")
-                    Text("Continue with Google")
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.red.opacity(0.85))
-                .foregroundColor(.white)
-                .cornerRadius(12)
+            Text(viewModel.socialSignInUnavailableMessage)
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            }
 
             if let error = viewModel.errorMessage {
                 Text(error)
@@ -96,17 +81,4 @@ struct LoginView: View {
             SignUpView()
         }
     }
-}
-
-// You’ll need to implement a simple GoogleSignInView
-struct GoogleSignInView: UIViewControllerRepresentable {
-    var completion: (UIViewController) -> Void
-    func makeUIViewController(context: Context) -> UIViewController {
-        let vc = UIViewController()
-        DispatchQueue.main.async {
-            completion(vc)
-        }
-        return vc
-    }
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
