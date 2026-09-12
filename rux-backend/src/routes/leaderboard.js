@@ -20,15 +20,30 @@ const filterActivitiesForPeriod = (activities, period) => {
 };
 
 router.get('/', async (req, res) => {
-    const { period = 'weekly' } = req.query;
+    const { period = 'weekly', teamId } = req.query;
 
     try {
-        const [activities, users] = await Promise.all([
+        const [activities, users, teams] = await Promise.all([
             readCollection('activities'),
-            readCollection('users')
+            readCollection('users'),
+            readCollection('teams')
         ]);
 
+        let team = null;
+        let memberIds = null;
+
+        if (teamId) {
+            team = teams.find((candidate) => candidate.id === teamId);
+
+            if (!team) {
+                return res.status(404).json({ error: 'Team not found' });
+            }
+
+            memberIds = new Set(Array.isArray(team.members) ? team.members : []);
+        }
+
         const leaderboard = users
+            .filter((user) => !memberIds || memberIds.has(user.id))
             .map((user) => {
                 const userActivities = filterActivitiesForPeriod(
                     activities.filter((activity) => activity.userId === user.id),
@@ -49,7 +64,12 @@ router.get('/', async (req, res) => {
                 ...entry
             }));
 
-        res.json({ period, entries: leaderboard });
+        res.json({
+            period,
+            teamId: team?.id ?? null,
+            teamName: team?.name ?? null,
+            entries: leaderboard
+        });
     } catch (error) {
         res.status(500).json({ error: 'Unable to load leaderboard' });
     }

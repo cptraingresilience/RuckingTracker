@@ -1,6 +1,6 @@
 # Rux privacy policy
 
-**Last updated: 2026-09-08**
+**Last updated: 2026-09-12**
 
 Rux ("the app") is a rucking tracker for iOS published by cptraingresilience ("we", "us").
 This policy describes exactly what the shipped app does with your data.
@@ -20,8 +20,7 @@ Deleting the app removes all of this local data.
 
 | Data | Where it goes | Why |
 |------|---------------|-----|
-| Email address, username, optional full name, password credential | Firebase Authentication (Google) and, when configured, the Rux backend | To create and authenticate your account |
-| Apple or Google sign-in identifier | Firebase Authentication | To authenticate you when you use Sign in with Apple or Google |
+| Email address, username, password credential, refresh token | Rux backend, when configured | To create and authenticate your account and keep you signed in |
 | Ruck sessions (title, notes, distance, duration, pace, pack weight, start/end time) | Rux backend, when you are signed in and a backend is configured | So your rucks are backed up and available to your account |
 | App usage events (screen views, button taps, completed-activity events) and the identifiers Firebase Analytics attaches to them | Firebase Analytics (Google) | To understand which features are used and to fix problems |
 
@@ -39,9 +38,8 @@ continues to work.
 
 ## Third-party services
 
-- **Firebase Authentication**, **Firebase Analytics / Google Analytics for Firebase**, and
-  **Google Sign-In** — see Google's privacy policy: https://policies.google.com/privacy
-- **Sign in with Apple** — see Apple's privacy policy: https://www.apple.com/legal/privacy/
+- **Firebase Analytics / Google Analytics for Firebase** — see Google's privacy policy:
+  https://policies.google.com/privacy
 
 ## Retention
 
