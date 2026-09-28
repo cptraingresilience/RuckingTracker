@@ -27,15 +27,15 @@ final class AuthService {
         false
     }
 
-    func signInWithEmail(email _: String, password _: String, completion: @escaping (Result<User, AuthError>) -> Void) {
+    func signInWithEmail(email _: String, password _: String, completion: @escaping (Result<Void, AuthError>) -> Void) {
         completion(.failure(.unsupported("Email authentication is handled by the Rux backend API.")))
     }
 
-    func signInWithGoogle(presenting _: UIViewController, completion: @escaping (Result<User, AuthError>) -> Void) {
+    func signInWithGoogle(presenting _: UIViewController, completion: @escaping (Result<Void, AuthError>) -> Void) {
         completion(.failure(.unsupported(socialSignInUnavailableMessage)))
     }
 
-    func signInWithApple(presentationAnchor _: ASPresentationAnchor, completion: @escaping (Result<User, AuthError>) -> Void) {
+    func signInWithApple(presentationAnchor _: ASPresentationAnchor, completion: @escaping (Result<Void, AuthError>) -> Void) {
         completion(.failure(.unsupported(socialSignInUnavailableMessage)))
     }
 }
