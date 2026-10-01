@@ -5,8 +5,6 @@
 //
 
 import SwiftUI
-import Firebase
-import GoogleSignIn
 
 @main
 struct RuckingTrackerApp: App {
@@ -16,10 +14,6 @@ struct RuckingTrackerApp: App {
     var body: some Scene {
         WindowGroup {
             LoginView()
-            .onOpenURL { url in
-                // This ensures Google Sign-In can process the callback
-                GIDSignIn.sharedInstance.handle(url)
-            }
         }
     }
 }

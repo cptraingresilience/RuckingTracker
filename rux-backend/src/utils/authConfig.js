@@ -67,4 +67,22 @@ const getAuthSecrets = () => {
     return { accessSecret, refreshSecret };
 };
 
-module.exports = { getAuthSecrets };
+const devFallbackAppleBundleId = 'Com.Rux.Rux';
+
+const getSocialAuthConfig = () => {
+    const appleBundleId = readSecret('APPLE_BUNDLE_ID');
+    const googleClientId = readSecret('GOOGLE_CLIENT_ID');
+
+    if (!appleBundleId && isProduction()) {
+        throw new Error('Missing required config: APPLE_BUNDLE_ID');
+    }
+
+    return {
+        // Apple identity tokens carry the app's bundle ID as audience.
+        appleBundleId: appleBundleId || devFallbackAppleBundleId,
+        // Google sign-in stays disabled until GOOGLE_CLIENT_ID is configured.
+        googleClientId: googleClientId || null
+    };
+};
+
+module.exports = { getAuthSecrets, getSocialAuthConfig };

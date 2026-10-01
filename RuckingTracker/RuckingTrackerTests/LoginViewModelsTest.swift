@@ -27,7 +27,6 @@ class LoginViewModelTests: XCTestCase {
         XCTAssertEqual(sut.username, "")
         XCTAssertEqual(sut.password, "")
         XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.isSocialSignInAvailable)
     }
 
     func testSocialSignInMessageExplainsDisabledState() {

@@ -485,7 +485,7 @@ class APIClient {
                 throw APIError.unauthorized
             }
 
-            return try await request(
+            return try await self.request(
                 path: path,
                 method: method,
                 body: body,

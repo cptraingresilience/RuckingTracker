@@ -6,8 +6,10 @@
 //
 
 import Foundation
-import FirebaseAnalytics
 
+/// Local analytics stub. Firebase was removed — events are logged to the
+/// console in Debug builds only. Swap in a real analytics backend later
+/// without changing any call sites.
 class AnalyticsService {
     static let shared = AnalyticsService()
 
@@ -18,7 +20,6 @@ class AnalyticsService {
         #if DEBUG
         print("Analytics Debug - Event: \(name), Parameters: \(parameters ?? [:])")
         #endif
-        Analytics.logEvent(name, parameters: parameters)
     }
 
     /// Tracks when a user completes an activity (custom helper)

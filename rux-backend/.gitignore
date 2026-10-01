@@ -6,3 +6,7 @@ npm-debug.log*
 coverage/
 .idea/
 .vscode/
+
+# Local JSON "database" — contains user accounts and password hashes.
+# Never commit real user data.
+data/

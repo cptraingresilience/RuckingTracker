@@ -35,6 +35,12 @@ app.use(cors(corsOptions));
 // Body parsing
 app.use(express.json({ limit: '50mb' }));
 
+// Log every request
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,

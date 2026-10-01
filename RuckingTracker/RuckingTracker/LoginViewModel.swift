@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import UIKit
+import Combine
 
 class LoginViewModel: ObservableObject {
     @Published var username: String = ""
@@ -14,10 +14,6 @@ class LoginViewModel: ObservableObject {
     @Published var isLoggedIn: Bool = false
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
-
-    var isSocialSignInAvailable: Bool {
-        AuthService.shared.isSocialSignInAvailable
-    }
 
     var socialSignInUnavailableMessage: String {
         AuthService.shared.socialSignInUnavailableMessage
@@ -33,6 +29,7 @@ class LoginViewModel: ObservableObject {
         self.isLoading = true
         self.errorMessage = nil
 
+        let password = self.password
         Task { [weak self] in
             do {
                 _ = try await APIClient.shared.signIn(email: trimmedEmail, password: password)
@@ -45,29 +42,6 @@ class LoginViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self?.isLoading = false
-                    self?.isLoggedIn = false
-                    self?.errorMessage = Self.errorDescription(error)
-                }
-            }
-        }
-    }
-
-    func loginWithGoogle(presenting: UIViewController) {
-        guard isSocialSignInAvailable else {
-            errorMessage = socialSignInUnavailableMessage
-            isLoggedIn = false
-            return
-        }
-
-        isLoading = true
-        AuthService.shared.signInWithGoogle(presenting: presenting) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isLoading = false
-                switch result {
-                case .success:
-                    self?.isLoggedIn = true
-                    self?.errorMessage = nil
-                case .failure(let error):
                     self?.isLoggedIn = false
                     self?.errorMessage = Self.errorDescription(error)
                 }

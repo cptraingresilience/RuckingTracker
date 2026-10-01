@@ -4,21 +4,21 @@
 <dict>
 	<key>BackendProductionBaseURL</key>
 	<string></string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.451848690353-578ggda8u8crtrgio1iblr9r5uo49h1k</string>
-			</array>
-		</dict>
-		<dict/>
-	</array>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleName</key>
+	<string>RuckingTracker</string>
+	<key>CFBundleDisplayName</key>
+	<string>Rux</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Rux uses your location while you are actively tracking a ruck to record route, distance, and pace. For this MVP, tracking only works while the app stays open and the iPhone remains unlocked.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>

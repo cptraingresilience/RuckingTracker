@@ -33,11 +33,12 @@ final class MapViewModel: ObservableObject {
     private var activityStartTime: Date?
 
     init(
-        locationManager: LocationManager = LocationManager(),
-        activityStore: ActivityStore = ActivityStore.shared
+        locationManager: LocationManager? = nil,
+        activityStore: ActivityStore? = nil
     ) {
+        let locationManager = locationManager ?? LocationManager()
         self.locationManager = locationManager
-        self.activityStore = activityStore
+        self.activityStore = activityStore ?? ActivityStore.shared
         authorizationStatus = locationManager.authorizationStatus
 
         locationManager.$route
@@ -84,7 +85,7 @@ final class MapViewModel: ObservableObject {
                 if let message {
                     statusMessage = message
                 } else if !isTracking {
-                    statusMessage = authorizationGuidance(for: authorizationStatus)
+                    statusMessage = MapViewModel.authorizationGuidance(for: authorizationStatus)
                 }
             }
             .store(in: &cancellables)

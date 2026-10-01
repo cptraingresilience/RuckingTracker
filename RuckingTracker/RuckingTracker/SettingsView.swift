@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
+    @EnvironmentObject var loginViewModel: LoginViewModel
+    @State private var showLogoutConfirmation = false
 
     var body: some View {
         NavigationView {
@@ -50,8 +52,32 @@ struct SettingsView: View {
                         Text("1.0.0").foregroundColor(.secondary)
                     }
                 }
+
+                Section {
+                    Button(role: .destructive) {
+                        showLogoutConfirmation = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            Text("Log Out")
+                                .fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                }
             }
             .navigationTitle("Settings")
+            .alert("Log Out", isPresented: $showLogoutConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Log Out", role: .destructive) {
+                    APIClient.shared.signOut()
+                    loginViewModel.password = ""
+                    loginViewModel.isLoggedIn = false
+                }
+            } message: {
+                Text("Are you sure you want to log out?")
+            }
         }
     }
 }

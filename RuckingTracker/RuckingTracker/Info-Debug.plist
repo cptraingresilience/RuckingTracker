@@ -2,24 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>BackendSimulatorBaseURL</key>
-	<string>http://127.0.0.1:3000/api</string>
 	<key>BackendLocalNetworkBaseURL</key>
-	<string></string>
+	<string>http://192.168.1.51:3000/api</string>
 	<key>BackendProductionBaseURL</key>
 	<string></string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.googleusercontent.apps.451848690353-578ggda8u8crtrgio1iblr9r5uo49h1k</string>
-			</array>
-		</dict>
-		<dict/>
-	</array>
+	<key>BackendSimulatorBaseURL</key>
+	<string>http://127.0.0.1:3000/api</string>
+	<key>CFBundleDisplayName</key>
+	<string>Rux</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>RuckingTracker</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>
@@ -31,5 +29,7 @@
 	<string>Debug builds can connect to a Rux backend running on your local network for development and testing.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Rux uses your location while you are actively tracking a ruck to record route, distance, and pace. For this MVP, tracking only works while the app stays open and the iPhone remains unlocked.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>
