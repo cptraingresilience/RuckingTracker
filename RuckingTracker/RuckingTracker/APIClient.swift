@@ -59,6 +59,7 @@ struct ActivitySubmissionRequest: Codable {
     let title: String
     let notes: String?
     let distance, duration, pace, packWeight: Double?
+    let rpe: Int?
     let startedAt, endedAt: String
 }
 
@@ -70,6 +71,7 @@ struct ActivityResponse: Codable, Identifiable {
     let duration: Double
     let pace: Double
     let packWeight: Double?
+    let rpe: Int?
     let startedAt: String
     let endedAt: String?
     let createdAt: String

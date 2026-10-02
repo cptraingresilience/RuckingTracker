@@ -16,6 +16,8 @@
 	<string>Rux</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>MBXAccessToken</key>
+	<string>pk.eyJ1IjoiY3B0cmFpbmluZ3Jlc2lsaWVuY2UiLCJhIjoiY211cjVwaXE3MGRyNTM0b3EyM2d1bG0zbiJ9.58aUsKB6XvF8j3U5B1K5Bg</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Rux uses your location while you are actively tracking a ruck to record route, distance, and pace. For this MVP, tracking only works while the app stays open and the iPhone remains unlocked.</string>
 	<key>UILaunchScreen</key>

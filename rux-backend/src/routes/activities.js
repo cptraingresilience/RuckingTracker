@@ -18,6 +18,9 @@ const parseActivity = (body, currentUserId, existingActivity = {}) => {
     const packWeight = body.packWeight == null || body.packWeight === ''
         ? null
         : Number(body.packWeight);
+    const rpe = body.rpe == null || body.rpe === ''
+        ? null
+        : Math.min(10, Math.max(1, Math.round(Number(body.rpe))));
 
     if (!title || !Number.isFinite(distance) || distance <= 0 || !Number.isFinite(duration) || duration <= 0 || !startedAt) {
         return { error: 'Missing or invalid required fields' };
@@ -33,6 +36,7 @@ const parseActivity = (body, currentUserId, existingActivity = {}) => {
             duration,
             pace,
             packWeight,
+            rpe: Number.isFinite(rpe) ? rpe : null,
             startedAt,
             endedAt,
             createdAt: existingActivity.createdAt || new Date().toISOString(),

@@ -9,6 +9,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     @Published private(set) var authorizationStatus: CLAuthorizationStatus
     @Published private(set) var currentLocation: CLLocation?
     @Published private(set) var isTracking: Bool = false
+    @Published private(set) var isPaused: Bool = false
     @Published private(set) var route: [CLLocation] = []
     @Published private(set) var lastErrorMessage: String?
 
@@ -62,6 +63,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
             route.removeAll()
             currentLocation = manager.location
             isTracking = true
+            isPaused = false
             manager.startUpdatingLocation()
         case .notDetermined:
             pendingStartAfterAuthorization = true
@@ -84,7 +86,25 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     func stopTracking() {
         pendingStartAfterAuthorization = false
         isTracking = false
+        isPaused = false
         manager.stopUpdatingLocation()
+    }
+
+    /// Pauses an in-progress ruck: stops consuming GPS updates but keeps the session alive.
+    func pauseTracking() {
+        guard isTracking, !isPaused else { return }
+        isPaused = true
+        manager.stopUpdatingLocation()
+    }
+
+    /// Resumes a paused ruck. Drops the stale `currentLocation` so the first post-resume
+    /// fix doesn't draw a long straight-line jump into the route.
+    func resumeTracking() {
+        guard isTracking, isPaused else { return }
+        isPaused = false
+        currentLocation = nil
+        lastErrorMessage = nil
+        manager.startUpdatingLocation()
     }
 
     func stopTrackingBecauseAppLeftForeground() {
@@ -94,7 +114,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard isTracking else { return }
+        guard isTracking, !isPaused else { return }
 
         let validLocations = locations.filter {
             $0.horizontalAccuracy >= 0 && abs($0.timestamp.timeIntervalSinceNow) <= 15

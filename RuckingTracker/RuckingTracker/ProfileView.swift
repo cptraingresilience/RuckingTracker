@@ -35,26 +35,26 @@ struct ProfileView: View {
                         .resizable()
                         .frame(width: 90, height: 90)
                         .foregroundColor(.white)
+                        .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 4)
                     Text(viewModel.user?.name ?? "Profile")
                         .font(.title2.bold())
-                        .foregroundColor(.primary)
+                        .foregroundColor(.white)
 
                     if !viewModel.subtitle.isEmpty {
                         Text(viewModel.subtitle)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.white.opacity(0.75))
                             .font(.subheadline)
                     }
 
                     if !viewModel.statusMessage.isEmpty {
                         Text(viewModel.statusMessage)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.7))
                             .font(.footnote)
                             .multilineTextAlignment(.center)
                     }
                 }
                 .padding(.top)
-
-                Divider()
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
                     ForEach(viewModel.stats) { stat in
@@ -65,14 +65,16 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Latest Ruck")
                         .font(.headline)
+                        .foregroundColor(.white)
 
                     if let activity = viewModel.latestActivity {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(activity.title.isEmpty ? "Untitled ruck" : activity.title)
                                 .font(.title3.bold())
+                                .foregroundColor(.white)
                             Text(activity.startedAt.formattedShort())
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white.opacity(0.7))
 
                             HStack {
                                 Label("\(activity.distanceText) mi", systemImage: "figure.walk")
@@ -82,24 +84,46 @@ struct ProfileView: View {
                                 Label("\(activity.paceText) min/mi", systemImage: "speedometer")
                             }
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.8))
 
                             if !activity.notes.isEmpty {
                                 Text(activity.notes)
                                     .font(.body)
+                                    .foregroundColor(.white.opacity(0.9))
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding()
-                        .background(Color(UIColor.systemGray6))
-                        .cornerRadius(12)
+                        .background(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(.ultraThinMaterial)
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color.black.opacity(0.20))
+                            }
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 4)
                     } else {
                         Text("No rucks logged yet. Your next saved activity will show up here.")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.75))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding()
-                            .background(Color(UIColor.systemGray6))
-                            .cornerRadius(12)
+                            .background(
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(.ultraThinMaterial)
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(Color.black.opacity(0.20))
+                                }
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            )
                     }
                 }
 

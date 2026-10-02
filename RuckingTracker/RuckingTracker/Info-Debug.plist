@@ -20,6 +20,8 @@
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>MBXAccessToken</key>
+	<string>pk.eyJ1IjoiY3B0cmFpbmluZ3Jlc2lsaWVuY2UiLCJhIjoiY211cjVwaXE3MGRyNTM0b3EyM2d1bG0zbiJ9.58aUsKB6XvF8j3U5B1K5Bg</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

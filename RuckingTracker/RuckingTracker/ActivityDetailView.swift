@@ -20,8 +20,9 @@ struct ActivityDetailView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(activity.title.isEmpty ? "Untitled Ruck" : activity.title)
                         .font(.title2.bold())
+                        .foregroundColor(.white)
                     Text(activity.startedAt, style: .date)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.7))
                         .font(.subheadline)
                 }
                 .padding(.horizontal)
@@ -66,12 +67,24 @@ struct ActivityDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Notes", systemImage: "note.text")
                             .font(.headline)
+                            .foregroundColor(.white)
                         Text(activity.notes)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.85))
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .background(Color(UIColor.systemGray6))
-                    .cornerRadius(12)
+                    .background(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(.ultraThinMaterial)
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.black.opacity(0.20))
+                        }
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    )
                     .padding(.horizontal)
                 }
 
@@ -84,14 +97,21 @@ struct ActivityDetailView: View {
                     Label("Delete Ruck", systemImage: "trash")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.red.opacity(0.1))
+                        .background(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(.ultraThinMaterial)
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color.red.opacity(0.18))
+                            }
+                        )
                         .foregroundColor(.red)
-                        .cornerRadius(12)
                 }
                 .padding(.horizontal)
                 .padding(.bottom)
             }
         }
+        .ruxBackground()
         .navigationTitle("Ruck Detail")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -126,20 +146,32 @@ struct MetricDetailCard: View {
         VStack(alignment: .leading, spacing: 6) {
             Label(label, systemImage: icon)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.75))
             HStack(alignment: .lastTextBaseline, spacing: 3) {
                 Text(value)
                     .font(.title3.bold())
+                    .foregroundColor(.white)
                 if !unit.isEmpty {
                     Text(unit)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.7))
                 }
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(UIColor.systemGray6))
-        .cornerRadius(12)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.black.opacity(0.20))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 3)
     }
 }

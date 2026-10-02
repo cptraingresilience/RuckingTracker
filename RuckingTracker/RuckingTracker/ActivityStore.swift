@@ -257,8 +257,9 @@ final class ActivityStore: ObservableObject {
             duration: activity.duration,
             pace: activity.pace,
             packWeight: activity.packWeight,
+            rpe: activity.rpe,
             startedAt: Self.iso8601String(from: activity.startedAt),
-            endedAt: Self.iso8601String(from: activity.startedAt.addingTimeInterval(activity.duration))
+            endedAt: Self.iso8601String(from: activity.endedAt ?? activity.startedAt.addingTimeInterval(activity.duration))
         )
     }
 
@@ -276,7 +277,9 @@ final class ActivityStore: ObservableObject {
             duration: response.duration,
             pace: response.pace,
             startedAt: startedAt,
-            packWeight: response.packWeight
+            endedAt: response.endedAt.flatMap(parseDate),
+            packWeight: response.packWeight,
+            rpe: response.rpe
         )
     }
 

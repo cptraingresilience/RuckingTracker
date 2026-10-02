@@ -25,19 +25,19 @@ let friendMaya = UserModel(name: "SFC Negron", profileImageName: "SampleProfile3
 
 let sampleActivities: [ActivityModel] = [
     ActivityModel(user: sampleUser, isRuck: true,
-                  date: .from(year: 2025, month: 10, day: 29, hour: 6, minute: 15),
+                  date: Date().addingTimeInterval(-6 * 3600),          // 6h ago
                   locationText: "South Austin Trail",
                   title: "Pre-dawn Ruck: Hills & Intervals",
                   distanceText: "12.5 mi", timeText: "2:30:00", paceText: "11:26 /mi",
                   mapImageName: "MapSample1"),
     ActivityModel(user: friendAlex, isRuck: false,
-                  date: .from(year: 2025, month: 10, day: 28, hour: 18, minute: 5),
+                  date: Date().addingTimeInterval(-26 * 3600),         // ~1d ago
                   locationText: "Old San Juan",
                   title: "Evening Tempo Run",
                   distanceText: "5.1 mi", timeText: "0:42:15", paceText: "8:18 /mi",
                   mapImageName: "MapSample2"),
     ActivityModel(user: friendMaya, isRuck: false,
-                  date: .from(year: 2025, month: 10, day: 26, hour: 7, minute: 0),
+                  date: Date().addingTimeInterval(-3 * 24 * 3600),     // 3d ago
                   locationText: "Riverfront",
                   title: "Hike & Bike Trail",
                   distanceText: "3.8 mi", timeText: "0:31:10", paceText: "8:12 /mi",
@@ -84,10 +84,18 @@ struct TabViewMain: View {
     }
 }
 
+// MARK: - Feed Comment
+struct FeedComment: Identifiable {
+    let id = UUID()
+    let author: String
+    let text: String
+    let date: Date
+}
+
 // MARK: - HomeView
 struct HomeView: View {
     let activities: [ActivityModel]
-    @State private var commentsByActivity: [UUID: [String]] = [:]
+    @State private var commentsByActivity: [UUID: [FeedComment]] = [:]
 
     var body: some View {
         GeometryReader { geo in
@@ -119,21 +127,46 @@ struct HomeView: View {
                     .padding(.horizontal)
                     .padding(.top, 40)
 
-                    // ScrollView for activities
-                    ScrollView(showsIndicators: false) {
-                        LazyVStack(spacing: 14) {
-                            ForEach(activities) { act in
-                                ActivityCardDetailed(
-                                    activity: act,
-                                    comments: Binding(
-                                        get: { commentsByActivity[act.id] ?? [] },
-                                        set: { commentsByActivity[act.id] = $0 }
-                                    )
-                                )
-                                .padding(.horizontal)
-                            }
+                    if activities.isEmpty {
+                        // Empty state
+                        VStack(spacing: 14) {
+                            Spacer()
+                            Image(systemName: "figure.hiking")
+                                .font(.system(size: 52))
+                                .foregroundColor(.orange.opacity(0.9))
+                            Text("No activity yet")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            Text("Start a ruck or follow teammates\nto fill your feed.")
+                                .font(.subheadline)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.white.opacity(0.8))
+                            Spacer()
+                            Spacer()
                         }
-                        .padding(.bottom, 110)
+                        .frame(maxWidth: .infinity)
+                    } else {
+                        // ScrollView for activities
+                        ScrollView(showsIndicators: false) {
+                            LazyVStack(spacing: 14) {
+                                ForEach(activities) { act in
+                                    ActivityCardDetailed(
+                                        activity: act,
+                                        comments: Binding(
+                                            get: { commentsByActivity[act.id] ?? [] },
+                                            set: { commentsByActivity[act.id] = $0 }
+                                        )
+                                    )
+                                    .padding(.horizontal)
+                                }
+                            }
+                            .padding(.bottom, 110)
+                        }
+                        .refreshable {
+                            // Feed is local sample data for now; this is the hook
+                            // where the backend feed fetch will land.
+                            try? await Task.sleep(nanoseconds: 800_000_000)
+                        }
                     }
                 }
             }
@@ -145,9 +178,21 @@ struct HomeView: View {
 // MARK: - Activity Card Detailed
 struct ActivityCardDetailed: View {
     let activity: ActivityModel
-    @Binding var comments: [String]
+    @Binding var comments: [FeedComment]
     @State private var isLiked = false
     @State private var showCommentSheet = false
+
+    /// Stable per-card sample like count until the backend feed exists.
+    private var baseLikeCount: Int {
+        abs(activity.title.hashValue % 11) + 2
+    }
+
+    private var likeCount: Int { baseLikeCount + (isLiked ? 1 : 0) }
+
+    /// Share text used by ShareLink.
+    private var shareSummary: String {
+        "\(activity.user.name) — \(activity.title): \(activity.distanceText) in \(activity.timeText) (\(activity.paceText)) 🎒 via Rux"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -167,12 +212,23 @@ struct ActivityCardDetailed: View {
 
                 Spacer()
 
-                Button(action: {}) {
+                Menu {
+                    Button("Copy summary") {
+                        UIPasteboard.general.string = shareSummary
+                    }
+                    Button("Hide this activity", role: .destructive) {
+                        // Placeholder until the backend feed supports muting.
+                    }
+                    Button("Report", role: .destructive) {
+                        // Placeholder until moderation exists.
+                    }
+                } label: {
                     Image(systemName: "ellipsis")
                         .rotationEffect(.degrees(90))
                         .foregroundColor(.orange)
                         .padding(8)
                 }
+                .accessibilityLabel("More options")
             }
 
             // Subheading
@@ -180,7 +236,7 @@ struct ActivityCardDetailed: View {
                 Image(systemName: activity.isRuck ? "shoeprints.fill" : "figure.run")
                     .foregroundColor(.orange)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(shortDateString(activity.date)) • \(shortTimeString(activity.date))")
+                    Text("\(Self.relativeDateString(activity.date)) • \(Self.shortTimeString(activity.date))")
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.9))
                     Text(activity.locationText)
@@ -214,13 +270,21 @@ struct ActivityCardDetailed: View {
 
             // Actions
             HStack(spacing: 22) {
-                Button(action: { isLiked.toggle() }) {
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                        isLiked.toggle()
+                    }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: isLiked ? "hand.thumbsup.fill" : "hand.thumbsup")
-                        Text("Like")
+                            .scaleEffect(isLiked ? 1.15 : 1.0)
+                        Text("\(likeCount)")
+                            .monospacedDigit()
                     }
                 }
                 .foregroundColor(isLiked ? .orange : .white)
+                .accessibilityLabel(isLiked ? "Unlike" : "Like")
 
                 Button(action: { showCommentSheet = true }) {
                     HStack(spacing: 6) {
@@ -229,13 +293,15 @@ struct ActivityCardDetailed: View {
                     }
                 }
                 .foregroundColor(.white)
+                .accessibilityLabel("Add comment")
 
                 Spacer()
 
-                Button(action: {}) {
+                ShareLink(item: shareSummary) {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .foregroundColor(.white)
+                .accessibilityLabel("Share activity")
             }
             .padding(.top, 6)
 
@@ -243,16 +309,26 @@ struct ActivityCardDetailed: View {
             if !comments.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Divider().background(Color.white.opacity(0.12))
-                    ForEach(Array(comments.enumerated()), id: \.offset) { _, comment in
+                    ForEach(comments) { comment in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "bubble.right.fill")
                                 .font(.caption2)
                                 .foregroundColor(.orange)
                                 .padding(.top, 3)
-                            Text(comment)
-                                .font(.footnote)
-                                .foregroundColor(.white.opacity(0.95))
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text(comment.author)
+                                        .font(.caption.bold())
+                                        .foregroundColor(.white)
+                                    Text(Self.relativeDateString(comment.date))
+                                        .font(.caption2)
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                Text(comment.text)
+                                    .font(.footnote)
+                                    .foregroundColor(.white.opacity(0.95))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                 }
@@ -265,7 +341,8 @@ struct ActivityCardDetailed: View {
         .shadow(color: Color.black.opacity(0.5), radius: 8, x: 0, y: 6)
         .sheet(isPresented: $showCommentSheet) {
             CommentSheet(activityTitle: activity.title) { newComment in
-                comments.append(newComment)
+                let author = APIClient.shared.currentUser?.username ?? "You"
+                comments.append(FeedComment(author: author, text: newComment, date: Date()))
             }
         }
     }
@@ -284,16 +361,27 @@ struct ActivityCardDetailed: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func shortDateString(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        return f.string(from: d)
-    }
+    // MARK: Formatters (static — created once, not per render)
 
-    private func shortTimeString(_ d: Date) -> String {
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .abbreviated
+        return f
+    }()
+
+    private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.timeStyle = .short
-        return f.string(from: d)
+        return f
+    }()
+
+    static func relativeDateString(_ d: Date) -> String {
+        if abs(d.timeIntervalSinceNow) < 60 { return "now" }
+        return relativeFormatter.localizedString(for: d, relativeTo: Date())
+    }
+
+    static func shortTimeString(_ d: Date) -> String {
+        timeFormatter.string(from: d)
     }
 }
 

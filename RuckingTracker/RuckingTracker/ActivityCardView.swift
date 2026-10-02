@@ -20,10 +20,11 @@ struct ActivityCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(activity.title.isEmpty ? "Untitled Ruck" : activity.title)
                     .font(.headline)
+                    .foregroundColor(.white)
                     .lineLimit(1)
                 Text(activity.startedAt, style: .date)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.7))
             }
 
             Spacer()
@@ -34,13 +35,24 @@ struct ActivityCardView: View {
                     .foregroundColor(.ruxAccent)
                 Text(activity.timeText)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.7))
             }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
-        .background(Color(UIColor.systemGray6))
-        .cornerRadius(12)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.black.opacity(0.20))
+            }
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.35), radius: 6, x: 0, y: 4)
     }
 }
 

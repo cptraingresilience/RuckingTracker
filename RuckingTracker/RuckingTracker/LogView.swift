@@ -40,32 +40,32 @@ struct LogView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 12)
 
-                Divider()
-
                 if let errorMessage = viewModel.errorMessage {
                     HStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.orange)
                         Text(errorMessage)
                             .font(.footnote)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.85))
                         Spacer()
                         Button("Dismiss") {
                             viewModel.clearError()
                         }
                         .font(.footnote.bold())
+                        .foregroundColor(.orange)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 10)
-                    .background(Color.orange.opacity(0.08))
+                    .background(.ultraThinMaterial)
                 }
- 
+
                 if viewModel.isLoading && viewModel.activities.isEmpty {
                     VStack(spacing: 12) {
                         Spacer()
                         ProgressView()
+                            .tint(.white)
                         Text("Loading your rucks...")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.8))
                         Spacer()
                     }
                 } else if viewModel.activities.isEmpty {
@@ -74,16 +74,17 @@ struct LogView: View {
                         Spacer()
                         Image(systemName: "figure.walk.circle")
                             .font(.system(size: 60))
-                            .foregroundColor(.ruxAccent.opacity(0.6))
+                            .foregroundColor(.ruxAccent.opacity(0.8))
                         Text("No rucks logged yet")
                             .font(.headline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white)
                         Text("Tap + to log your first ruck")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.white.opacity(0.7))
                         Button("Refresh") {
                             Task { await viewModel.refresh() }
                         }
+                        .foregroundColor(.orange)
                         Spacer()
                     }
                 } else {
