@@ -9,12 +9,26 @@ import SwiftUI
 
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
+    @EnvironmentObject var loginViewModel: LoginViewModel
+    @State private var showSettings = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 22) {
-                HeaderView(title: "Profile", systemIcon: "person.circle.fill")
-                    .padding(.bottom, 8)
+                ZStack(alignment: .topTrailing) {
+                    HeaderView(title: "Profile", systemIcon: "person.circle.fill")
+
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.title2)
+                            .foregroundColor(.orange)
+                            .padding(8)
+                    }
+                    .accessibilityLabel("Settings")
+                }
+                .padding(.bottom, 8)
 
                 VStack(spacing: 10) {
                     Image(systemName: viewModel.user?.profileImageName ?? "person.crop.circle.fill")
@@ -93,7 +107,11 @@ struct ProfileView: View {
             }
             .padding()
         }
-        .background(Color(UIColor.systemGray5).edgesIgnoringSafeArea(.all))
+        .ruxBackground()
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environmentObject(loginViewModel)
+        }
         .onAppear {
             viewModel.refresh()
         }

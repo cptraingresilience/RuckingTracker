@@ -105,11 +105,13 @@ struct LogView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                     .refreshable {
                         await viewModel.refresh()
                     }
                 }
             }
+            .ruxBackground()
             .navigationTitle("Activity Log")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

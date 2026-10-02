@@ -13,7 +13,7 @@ struct RuckingTrackerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            LoginView()
+            TabViewMain()
         }
     }
 }

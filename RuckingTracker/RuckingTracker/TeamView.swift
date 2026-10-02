@@ -75,6 +75,7 @@ struct TeamView: View {
             }
         }
         .padding()
+        .ruxBackground()
         .onChange(of: viewModel.selectedTeamId) { newTeamId in
             guard !newTeamId.isEmpty else { return }
             Task {
